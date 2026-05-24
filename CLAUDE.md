@@ -1,9 +1,11 @@
 # CLAUDE.md — devwallet-mobile
 
 ## Purpose
+
 React Native app for DevWallet (multi-chain testnet wallet). All key derivation + signing happens on-device. Network calls hit the backend at `/api/v1/*` only for orchestration (faucet, webhooks, network config).
 
 ## Stack
+
 - React Native 0.85.3 (Hermes + New Architecture / Fabric)
 - Bun package manager
 - TypeScript strict (extends `@react-native/typescript-config`)
@@ -15,7 +17,9 @@ React Native app for DevWallet (multi-chain testnet wallet). All key derivation 
 - Chain libs: `viem` (EVM), `@solana/web3.js`, `@cosmjs/*`, `bitcoinjs-lib`, `xrpl`, `starknet`
 
 ## Folder structure (flat layout)
+
 Diverges from PRD §6.2. Single src/ flat tree:
+
 ```
 src/
   core/             # di, network, crypto, storage, constants
@@ -30,9 +34,11 @@ src/
   theme/
   utils/
 ```
-No `features/<name>/` nesting. PRD §6.2 still describes the original nested layout — this repo intentionally flattened it.
+
+No `features/<name>/` nesting. Type-based flat layer-grouping — matches PRD §6.2. Files inside flat folders use feature-name prefix (`WalletViewModel.ts`, `FaucetViewModel.ts`). Promote to `features/` only when feature count > 15.
 
 ## Conventions
+
 - Conventional Commits required (commitlint enforced)
 - Clean MVVM: ViewModel calls Repository directly. **No use case layer.**
 - ESLint flat config (`eslint.config.mjs`). Template-aligned: double quotes, no semi, 120 col, 2-space indent.
@@ -41,6 +47,7 @@ No `features/<name>/` nesting. PRD §6.2 still describes the original nested lay
 - Private key NEVER leaves the device. All signing on-device, full stop.
 
 ## Forbidden
+
 - Do not introduce Redux / MobX / Zustand. Use `StateFlow` from `react-native-mobile-mvvm`.
 - Do not add a use case layer.
 - Do not call chain libs directly from screens — always through ViewModel → Repository → Datasource.
