@@ -1,6 +1,6 @@
 import { Chain } from "./chains.enum"
 
-export interface NetworkConfig {
+type NetworkConfig = {
   chain: Chain
   name: string
   rpcUrl: string
@@ -8,7 +8,7 @@ export interface NetworkConfig {
   faucetUrl: string | null
 }
 
-export const NETWORKS: Record<Chain, NetworkConfig> = {
+const NETWORKS: Record<Chain, NetworkConfig> = {
   [Chain.EVM_SEPOLIA]: {
     chain: Chain.EVM_SEPOLIA,
     name: "Sepolia",
@@ -66,3 +66,5 @@ export const NETWORKS: Record<Chain, NetworkConfig> = {
     faucetUrl: null
   }
 }
+
+export { NETWORKS, type NetworkConfig }

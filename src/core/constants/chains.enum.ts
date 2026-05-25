@@ -1,4 +1,4 @@
-export enum Chain {
+enum Chain {
   EVM_SEPOLIA = "evm:sepolia",
   EVM_HOLESKY = "evm:holesky",
   EVM_LOCAL = "evm:local",
@@ -8,3 +8,5 @@ export enum Chain {
   XRPL_TESTNET = "xrpl:testnet",
   STARKNET_SEPOLIA = "starknet:sepolia"
 }
+
+export { Chain }

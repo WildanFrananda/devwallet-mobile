@@ -1,9 +1,9 @@
-import React from "react"
+import { type JSX} from "react"
+import { Text, View, StyleSheet } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { View, Text, StyleSheet } from "react-native"
 import GenerateWalletScreen from "../screens/GenerateWalletScreen"
 
-export type OnboardingStackParamList = {
+type OnboardingStackParamList = {
   GenerateWallet: undefined
   RestoreWallet: undefined
   VerifyMnemonic: undefined
@@ -11,7 +11,7 @@ export type OnboardingStackParamList = {
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>()
 
-function PlaceholderScreen({ label }: { label: string }) {
+function PlaceholderScreen({ label }: { label: string }): JSX.Element {
   return (
     <View style={styles.center}>
       <Text style={styles.text}>{label}</Text>
@@ -19,7 +19,7 @@ function PlaceholderScreen({ label }: { label: string }) {
   )
 }
 
-function OnboardingNavigator() {
+function OnboardingNavigator(): JSX.Element {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="GenerateWallet" component={GenerateWalletScreen} />

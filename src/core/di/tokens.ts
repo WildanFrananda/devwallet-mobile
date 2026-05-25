@@ -1,4 +1,4 @@
-export const Tokens = {
+const Tokens = {
   // Storage
   MmkvStorage: Symbol.for("MmkvStorage"),
   Keychain: Symbol.for("Keychain"),
@@ -29,3 +29,4 @@ export const Tokens = {
 } as const
 
 export type TokenKey = keyof typeof Tokens
+export { Tokens }

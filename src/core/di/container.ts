@@ -3,7 +3,7 @@ import { configureDI as configureMvvmDI, getContainer } from "react-native-mobil
 
 let configured = false
 
-export function configureDI(): void {
+function configureDI(): void {
   if (configured) return
   configureMvvmDI(() => {
     // Phase 1+ registrations go here, e.g.:
@@ -13,4 +13,4 @@ export function configureDI(): void {
   configured = true
 }
 
-export { getContainer }
+export { getContainer, configureDI }

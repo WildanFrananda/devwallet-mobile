@@ -1,9 +1,9 @@
-import React from "react"
+import { type JSX } from "react"
 import { View, Text, Button, ActivityIndicator, StyleSheet } from "react-native"
 import { useViewModel, useUiState } from "react-native-mobile-mvvm"
 import OnboardingViewModel from "../viewmodels/OnboardingViewModel"
 
-function GenerateWalletScreen() {
+function GenerateWalletScreen(): JSX.Element {
   const vm = useViewModel(OnboardingViewModel)
   const { isLoading, isSuccess, isError, error } = useUiState(vm.walletState$)
 

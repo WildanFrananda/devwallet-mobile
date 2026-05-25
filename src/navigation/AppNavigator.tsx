@@ -1,9 +1,9 @@
-import React from "react"
+import { type JSX } from "react"
+import { Text, View, StyleSheet } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { View, Text, StyleSheet } from "react-native"
 import TabNavigator from "./TabNavigator"
 
-export type AppStackParamList = {
+type AppStackParamList = {
   Main: undefined
   ContractTerminal: undefined
   TxReplay: undefined
@@ -12,7 +12,7 @@ export type AppStackParamList = {
 
 const Stack = createNativeStackNavigator<AppStackParamList>()
 
-function PlaceholderScreen({ label }: { label: string }) {
+function PlaceholderScreen({ label }: { label: string }): JSX.Element {
   return (
     <View style={styles.center}>
       <Text style={styles.text}>{label}</Text>
@@ -20,7 +20,7 @@ function PlaceholderScreen({ label }: { label: string }) {
   )
 }
 
-function AppNavigator() {
+function AppNavigator(): JSX.Element {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main" component={TabNavigator} />

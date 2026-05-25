@@ -1,8 +1,8 @@
-import React from "react"
+import { type JSX } from "react"
+import { Text, View, StyleSheet } from "react-native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
-import { View, Text, StyleSheet } from "react-native"
 
-export type TabParamList = {
+type TabParamList = {
   Wallet: undefined
   Faucet: undefined
   RpcInspector: undefined
@@ -11,7 +11,7 @@ export type TabParamList = {
 
 const Tab = createBottomTabNavigator<TabParamList>()
 
-function PlaceholderScreen({ label }: { label: string }) {
+function PlaceholderScreen({ label }: { label: string }): JSX.Element {
   return (
     <View style={styles.center}>
       <Text style={styles.text}>{label}</Text>
@@ -19,7 +19,7 @@ function PlaceholderScreen({ label }: { label: string }) {
   )
 }
 
-function TabNavigator() {
+function TabNavigator(): JSX.Element {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Wallet">{() => <PlaceholderScreen label="Wallet" />}</Tab.Screen>
