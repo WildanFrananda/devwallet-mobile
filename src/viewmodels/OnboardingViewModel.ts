@@ -1,6 +1,6 @@
 import { inject, injectable } from "tsyringe"
 import { StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
-import KeyringService from "../core/crypto/keyring/keyring.service"
+import WalletRepository from "../repositories/wallet.repository"
 import Bip39 from "../core/crypto/bip39"
 import { Tokens } from "../core/di/tokens"
 import Account from "../models/account.model"
@@ -26,23 +26,26 @@ class OnboardingViewModel extends ViewModel {
   private readonly _report = new StateFlow<UiState<DerivationReport>>(UiState.idle())
   public readonly report$ = this._report.asReadOnly()
 
-  public constructor(@inject(Tokens.KeyringService) private readonly keyring: KeyringService) {
+  public constructor(@inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
     super()
   }
 
   /**
-   * Phase 1 PoC: loads the BIP44 test mnemonic, derives every supported
-   * chain, and returns a per-chain validity report. Phase 1 Day 7+ swaps
-   * this for `WalletRepository.createFromMnemonic` (real user mnemonic +
-   * Keychain persistence).
+   * Phase 1 PoC: feeds the BIP44 test mnemonic through WalletRepository
+   * (skips keychain persistence — just loads the keyring) and reports per-
+   * chain validity. Phase 1 Day 8+ swaps this for the real Generate flow.
    */
   public runPoc(): void {
     this._report.value = UiState.loading()
     void this.launch(async signal => {
       try {
         const mnemonicValid = Bip39.validate(TEST_MNEMONIC)
-        this.keyring.loadMnemonic(TEST_MNEMONIC)
-        const accounts = await this.keyring.deriveSupportedAll(0)
+        // Skip keychain in PoC — directly load the test mnemonic into the
+        // in-memory keyring. createFromMnemonic would prompt biometric.
+        if (!this.wallet.isUnlocked()) {
+          await this.wallet.createFromMnemonic(TEST_MNEMONIC, false)
+        }
+        const accounts = await this.wallet.deriveAll(0)
         if (signal.aborted) return
 
         const evmAccounts = accounts.filter(a => a.chain.startsWith("evm:"))

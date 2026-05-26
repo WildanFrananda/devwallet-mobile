@@ -3,6 +3,7 @@ import { HDKey } from "@scure/bip32"
 import Bip39 from "../bip39"
 import { Chain } from "../../constants/chains.enum"
 import Account from "../../../models/account.model"
+import type { ChainDeriver, DerivationContext } from "../derivers/chain-deriver.interface"
 import EvmDeriver from "../derivers/evm.deriver"
 import BitcoinDeriver from "../derivers/bitcoin.deriver"
 import SolanaDeriver from "../derivers/solana.deriver"
@@ -11,17 +12,38 @@ import XrplDeriver from "../derivers/xrpl.deriver"
 import StarknetDeriver from "../derivers/starknet.deriver"
 
 /**
- * Holds the HD root + BIP39 seed + mnemonic in-memory and dispatches per-chain
- * derivation. Cosmos derivation is async (cosmjs PBKDF2-based) so the whole
- * API is async. Mnemonic stays in memory only until clear() — Phase 1 will
- * plug Keychain persistence on top, but this service never writes the seed
- * itself.
+ * Strategy-pattern dispatcher: holds the HD root + BIP39 seed + mnemonic in
+ * memory and delegates derivation to whichever ChainDeriver claims support
+ * for the requested chain. Add a new chain by appending a new deriver to
+ * the list — no method here changes.
  */
 @injectable()
 class KeyringService {
   private root: HDKey | null = null
   private seed: Uint8Array | null = null
   private mnemonic: string | null = null
+
+  private readonly derivers: ReadonlyArray<ChainDeriver> = [
+    new EvmDeriver(),
+    new BitcoinDeriver(),
+    new SolanaDeriver(),
+    new CosmosDeriver(),
+    new XrplDeriver(),
+    new StarknetDeriver()
+  ]
+
+  private static readonly SUPPORTED_CHAINS: ReadonlyArray<Chain> = [
+    Chain.EVM_SEPOLIA,
+    Chain.EVM_HOLESKY,
+    Chain.EVM_POLYGON_AMOY,
+    Chain.EVM_BASE_SEPOLIA,
+    Chain.EVM_LOCAL,
+    Chain.BITCOIN_TESTNET,
+    Chain.SOLANA_DEVNET,
+    Chain.COSMOS_THETA,
+    Chain.XRPL_TESTNET,
+    Chain.STARKNET_SEPOLIA
+  ]
 
   public loadMnemonic(mnemonic: string, passphrase: string = ""): void {
     const seed = Bip39.toSeed(mnemonic, passphrase)
@@ -41,59 +63,28 @@ class KeyringService {
   }
 
   public async deriveAccount(chain: Chain, addressIndex: number = 0): Promise<Account> {
-    if (!this.root || !this.seed || !this.mnemonic) {
-      throw new Error("Keyring locked — call loadMnemonic() first")
+    const ctx = this.context()
+    const deriver = this.derivers.find(d => d.supports(chain))
+    if (!deriver) {
+      throw new Error(`No deriver registered for chain ${chain}`)
     }
-
-    if (KeyringService.isEvm(chain)) {
-      return EvmDeriver.derive(this.root, chain, addressIndex)
-    }
-    if (chain === Chain.BITCOIN_TESTNET) {
-      return BitcoinDeriver.derive(this.root, addressIndex)
-    }
-    if (chain === Chain.SOLANA_DEVNET) {
-      return SolanaDeriver.derive(this.seed, addressIndex)
-    }
-    if (chain === Chain.COSMOS_THETA) {
-      return CosmosDeriver.derive(this.mnemonic, addressIndex)
-    }
-    if (chain === Chain.XRPL_TESTNET) {
-      return XrplDeriver.derive(this.mnemonic, addressIndex)
-    }
-    if (chain === Chain.STARKNET_SEPOLIA) {
-      return StarknetDeriver.derive(this.root, addressIndex)
-    }
-
-    throw new Error(`deriveAccount: chain ${chain} not implemented yet`)
+    return deriver.derive(ctx, chain, addressIndex)
   }
 
   public async deriveEvmAll(addressIndex: number = 0): Promise<Account[]> {
-    return Promise.all(KeyringService.EVM_CHAINS.map(chain => this.deriveAccount(chain, addressIndex)))
+    const evm = KeyringService.SUPPORTED_CHAINS.filter(c => c.startsWith("evm:"))
+    return Promise.all(evm.map(chain => this.deriveAccount(chain, addressIndex)))
   }
 
   public async deriveSupportedAll(addressIndex: number = 0): Promise<Account[]> {
     return Promise.all(KeyringService.SUPPORTED_CHAINS.map(chain => this.deriveAccount(chain, addressIndex)))
   }
 
-  private static readonly EVM_CHAINS: ReadonlyArray<Chain> = [
-    Chain.EVM_SEPOLIA,
-    Chain.EVM_HOLESKY,
-    Chain.EVM_POLYGON_AMOY,
-    Chain.EVM_BASE_SEPOLIA,
-    Chain.EVM_LOCAL
-  ]
-
-  private static readonly SUPPORTED_CHAINS: ReadonlyArray<Chain> = [
-    ...KeyringService.EVM_CHAINS,
-    Chain.BITCOIN_TESTNET,
-    Chain.SOLANA_DEVNET,
-    Chain.COSMOS_THETA,
-    Chain.XRPL_TESTNET,
-    Chain.STARKNET_SEPOLIA
-  ]
-
-  private static isEvm(chain: Chain): boolean {
-    return KeyringService.EVM_CHAINS.includes(chain)
+  private context(): DerivationContext {
+    if (!this.root || !this.seed || !this.mnemonic) {
+      throw new Error("Keyring locked — call loadMnemonic() first")
+    }
+    return { root: this.root, seed: this.seed, mnemonic: this.mnemonic }
   }
 }
 

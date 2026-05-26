@@ -4,29 +4,32 @@ import { bytesToHex, type Hex } from "viem"
 import Bip44Paths from "../bip44"
 import { Chain } from "../../constants/chains.enum"
 import Account from "../../../models/account.model"
+import type { ChainDeriver, DerivationContext } from "./chain-deriver.interface"
 
-class SolanaDeriver {
-  /**
-   * Ed25519 SLIP-0010 derivation. Uses hardened-only path `m/44'/501'/N'/0'`
-   * (Phantom + Solflare convention).
-   */
-  public static derive(seed: Uint8Array, addressIndex: number = 0): Account {
+class SolanaDeriver implements ChainDeriver {
+  public supports(chain: Chain): boolean {
+    return chain === Chain.SOLANA_DEVNET
+  }
+
+  public derive(ctx: DerivationContext, _chain: Chain, addressIndex: number): Promise<Account> {
     const path = Bip44Paths.hardenedPath(Chain.SOLANA_DEVNET, addressIndex)
-    const seedHex = bytesToHex(seed).slice(2)
+    const seedHex = bytesToHex(ctx.seed).slice(2)
     const { key } = derivePath(path, seedHex)
     const keypair = Keypair.fromSeed(new Uint8Array(key))
 
     const privateKey: Hex = bytesToHex(keypair.secretKey)
     const publicKey: Hex = bytesToHex(keypair.publicKey.toBytes())
 
-    return new Account({
-      chain: Chain.SOLANA_DEVNET,
-      address: keypair.publicKey.toBase58(),
-      privateKey,
-      publicKey,
-      path,
-      index: addressIndex
-    })
+    return Promise.resolve(
+      new Account({
+        chain: Chain.SOLANA_DEVNET,
+        address: keypair.publicKey.toBase58(),
+        privateKey,
+        publicKey,
+        path,
+        index: addressIndex
+      })
+    )
   }
 }
 

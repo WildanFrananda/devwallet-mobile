@@ -1,0 +1,83 @@
+import { inject, injectable } from "tsyringe"
+import WalletRepository from "./wallet.repository"
+import KeyringService from "../core/crypto/keyring/keyring.service"
+import KeychainService from "../core/storage/keychain.service"
+import Bip39 from "../core/crypto/bip39"
+import { Chain } from "../core/constants/chains.enum"
+import { Tokens } from "../core/di/tokens"
+import Account from "../models/account.model"
+
+@injectable()
+class WalletRepositoryImpl extends WalletRepository {
+  public constructor(
+    @inject(Tokens.KeyringService) private readonly keyring: KeyringService,
+    @inject(Tokens.Keychain) private readonly keychain: KeychainService
+  ) {
+    super()
+  }
+
+  public override hasWallet(): Promise<boolean> {
+    return this.keychain.hasMnemonic()
+  }
+
+  public override async createFromMnemonic(mnemonic: string, requireBiometric: boolean = true): Promise<Account> {
+    return this.persistAndLoad(mnemonic, requireBiometric)
+  }
+
+  public override async restore(mnemonic: string, requireBiometric: boolean = true): Promise<Account> {
+    if (!Bip39.validate(mnemonic)) {
+      throw new Error("Invalid mnemonic — failed BIP39 checksum")
+    }
+    return this.persistAndLoad(mnemonic, requireBiometric)
+  }
+
+  public override async unlock(promptMessage: string = "Unlock wallet"): Promise<Account> {
+    const mnemonic = await this.keychain.getMnemonic(promptMessage)
+    if (!mnemonic) {
+      throw new Error("No mnemonic in keychain (or user cancelled biometric)")
+    }
+    this.keyring.loadMnemonic(mnemonic)
+    return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
+  }
+
+  public override async getCurrent(): Promise<Account> {
+    if (!this.keyring.isUnlocked()) {
+      throw new Error("Keyring locked — call unlock() first")
+    }
+    return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
+  }
+
+  public override async deriveAll(addressIndex: number = 0): Promise<Account[]> {
+    if (!this.keyring.isUnlocked()) {
+      throw new Error("Keyring locked — call unlock() first")
+    }
+    return this.keyring.deriveSupportedAll(addressIndex)
+  }
+
+  public override async derive(chain: Chain, addressIndex: number = 0): Promise<Account> {
+    if (!this.keyring.isUnlocked()) {
+      throw new Error("Keyring locked — call unlock() first")
+    }
+    return this.keyring.deriveAccount(chain, addressIndex)
+  }
+
+  public override async clear(): Promise<void> {
+    await this.keychain.clear()
+    this.keyring.clear()
+  }
+
+  public override isUnlocked(): boolean {
+    return this.keyring.isUnlocked()
+  }
+
+  private async persistAndLoad(mnemonic: string, requireBiometric: boolean): Promise<Account> {
+    if (!Bip39.validate(mnemonic)) {
+      throw new Error("Invalid mnemonic — failed BIP39 checksum")
+    }
+    await this.keychain.setMnemonic(mnemonic, requireBiometric)
+    this.keyring.loadMnemonic(mnemonic)
+    return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
+  }
+}
+
+export default WalletRepositoryImpl

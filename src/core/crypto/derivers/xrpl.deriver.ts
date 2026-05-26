@@ -3,15 +3,16 @@ import type { Hex } from "viem"
 import Bip44Paths from "../bip44"
 import { Chain } from "../../constants/chains.enum"
 import Account from "../../../models/account.model"
+import type { ChainDeriver, DerivationContext } from "./chain-deriver.interface"
 
-class XrplDeriver {
-  /**
-   * XRPL classic address (`r...`) at BIP44 path m/44'/144'/0'/0/0.
-   * Uses xrpl.js secp256k1 derivation (Ledger-compatible).
-   */
-  public static derive(mnemonic: string, addressIndex: number = 0): Account {
+class XrplDeriver implements ChainDeriver {
+  public supports(chain: Chain): boolean {
+    return chain === Chain.XRPL_TESTNET
+  }
+
+  public derive(ctx: DerivationContext, _chain: Chain, addressIndex: number): Promise<Account> {
     const path = Bip44Paths.path(Chain.XRPL_TESTNET, addressIndex)
-    const wallet = Wallet.fromMnemonic(mnemonic, {
+    const wallet = Wallet.fromMnemonic(ctx.mnemonic, {
       derivationPath: path,
       mnemonicEncoding: "bip39"
     })
@@ -19,14 +20,16 @@ class XrplDeriver {
     const privateKey: Hex = (wallet.privateKey.startsWith("0x") ? wallet.privateKey : `0x${wallet.privateKey}`) as Hex
     const publicKey: Hex = (wallet.publicKey.startsWith("0x") ? wallet.publicKey : `0x${wallet.publicKey}`) as Hex
 
-    return new Account({
-      chain: Chain.XRPL_TESTNET,
-      address: wallet.classicAddress,
-      privateKey,
-      publicKey,
-      path,
-      index: addressIndex
-    })
+    return Promise.resolve(
+      new Account({
+        chain: Chain.XRPL_TESTNET,
+        address: wallet.classicAddress,
+        privateKey,
+        publicKey,
+        path,
+        index: addressIndex
+      })
+    )
   }
 }
 

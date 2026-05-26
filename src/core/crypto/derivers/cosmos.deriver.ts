@@ -4,17 +4,16 @@ import { bytesToHex, type Hex } from "viem"
 import Bip44Paths from "../bip44"
 import { Chain } from "../../constants/chains.enum"
 import Account from "../../../models/account.model"
+import type { ChainDeriver, DerivationContext } from "./chain-deriver.interface"
 
-class CosmosDeriver {
-  /**
-   * Cosmos Hub-style bech32 (`cosmos1...`) at standard BIP44 path
-   * m/44'/118'/0'/0/0. Uses cosmjs DirectSecp256k1HdWallet — signing is
-   * delegated to cosmjs at tx-build time, so we keep the wallet handle for
-   * later phases but only expose the address + path here.
-   */
-  public static async derive(mnemonic: string, addressIndex: number = 0): Promise<Account> {
+class CosmosDeriver implements ChainDeriver {
+  public supports(chain: Chain): boolean {
+    return chain === Chain.COSMOS_THETA
+  }
+
+  public async derive(ctx: DerivationContext, _chain: Chain, addressIndex: number): Promise<Account> {
     const path = Bip44Paths.path(Chain.COSMOS_THETA, addressIndex)
-    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
+    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(ctx.mnemonic, {
       prefix: "cosmos",
       hdPaths: [stringToPath(path)]
     })
@@ -25,9 +24,7 @@ class CosmosDeriver {
     }
 
     const publicKey: Hex = bytesToHex(accountInfo.pubkey)
-    // cosmjs intentionally hides the private key after construction; signing
-    // is done via wallet.signDirect(). Phase 1 surfaces it as empty hex; the
-    // signer service in Phase 1 Day 5 will swap to keeping the wallet ref.
+    // Private key stays inside cosmjs wallet; signing goes through it later.
     const privateKey: Hex = "0x"
 
     return new Account({
