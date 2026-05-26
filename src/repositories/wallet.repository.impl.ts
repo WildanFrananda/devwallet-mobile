@@ -2,16 +2,19 @@ import { inject, injectable } from "tsyringe"
 import WalletRepository from "./wallet.repository"
 import KeyringService from "../core/crypto/keyring/keyring.service"
 import KeychainService from "../core/storage/keychain.service"
+import BalanceDatasource from "../datasources/balance/balance.datasource"
 import Bip39 from "../core/crypto/bip39"
 import { Chain } from "../core/constants/chains.enum"
 import { Tokens } from "../core/di/tokens"
 import Account from "../models/account.model"
+import Portfolio from "../models/portfolio.model"
 
 @injectable()
 class WalletRepositoryImpl extends WalletRepository {
   public constructor(
     @inject(Tokens.KeyringService) private readonly keyring: KeyringService,
-    @inject(Tokens.Keychain) private readonly keychain: KeychainService
+    @inject(Tokens.Keychain) private readonly keychain: KeychainService,
+    @inject(Tokens.BalanceDatasource) private readonly balances: BalanceDatasource
   ) {
     super()
   }
@@ -59,6 +62,12 @@ class WalletRepositoryImpl extends WalletRepository {
       throw new Error("Keyring locked — call unlock() first")
     }
     return this.keyring.deriveAccount(chain, addressIndex)
+  }
+
+  public override async loadPortfolio(addressIndex: number = 0): Promise<Portfolio> {
+    const accounts = await this.deriveAll(addressIndex)
+    const entries = await this.balances.fetchMany(accounts)
+    return new Portfolio(entries)
   }
 
   public override async clear(): Promise<void> {

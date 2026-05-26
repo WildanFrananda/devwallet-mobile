@@ -2,6 +2,7 @@ import "reflect-metadata"
 import WalletRepositoryImpl from "../src/repositories/wallet.repository.impl"
 import KeyringService from "../src/core/crypto/keyring/keyring.service"
 import KeychainService from "../src/core/storage/keychain.service"
+import BalanceDatasource from "../src/datasources/balance/balance.datasource"
 import { Chain } from "../src/core/constants/chains.enum"
 
 const TEST_MNEMONIC = "test test test test test test test test test test test junk"
@@ -27,7 +28,7 @@ jest.mock("react-native-keychain", () => ({
 }))
 
 function makeRepo(): WalletRepositoryImpl {
-  return new WalletRepositoryImpl(new KeyringService(), new KeychainService())
+  return new WalletRepositoryImpl(new KeyringService(), new KeychainService(), new BalanceDatasource())
 }
 
 describe("WalletRepository", () => {

@@ -20,6 +20,9 @@ const Tokens = {
   // Network — HTTP
   ApiClient: Symbol.for("ApiClient"),
 
+  // Datasources
+  BalanceDatasource: Symbol.for("BalanceDatasource"),
+
   // Repositories (per feature)
   OnboardingRepository: Symbol.for("OnboardingRepository"),
   WalletRepository: Symbol.for("WalletRepository"),

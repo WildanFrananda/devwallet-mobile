@@ -1,10 +1,11 @@
 import Account from "../models/account.model"
+import Portfolio from "../models/portfolio.model"
 import { Chain } from "../core/constants/chains.enum"
 
 /**
  * Wallet ports — orchestrates KeyringService (in-memory HD root) +
- * KeychainService (secure-enclave persistence). Phase 1 surface only;
- * Phase 2+ will plug session keepalive + multi-account.
+ * KeychainService (secure-enclave persistence) + BalanceDatasource
+ * (per-chain native balance fetch).
  */
 abstract class WalletRepository {
   public abstract hasWallet(): Promise<boolean>
@@ -26,6 +27,13 @@ abstract class WalletRepository {
 
   /** Derive a single chain at the given index. */
   public abstract derive(chain: Chain, addressIndex?: number): Promise<Account>
+
+  /**
+   * Derive every supported account at the given index then fetch native
+   * balance for each in parallel. Returns a Portfolio with per-account
+   * success/error entries — never throws for individual chain failures.
+   */
+  public abstract loadPortfolio(addressIndex?: number): Promise<Portfolio>
 
   /** Wipe keychain + in-memory keyring. */
   public abstract clear(): Promise<void>
