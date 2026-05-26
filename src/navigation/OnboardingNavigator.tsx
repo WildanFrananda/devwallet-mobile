@@ -1,9 +1,10 @@
 import { type JSX } from "react"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { ViewModelScope } from "react-native-mobile-mvvm"
+import { ViewModelScope, useScopedViewModel, useEvent } from "react-native-mobile-mvvm"
 import GenerateWalletScreen from "../screens/GenerateWalletScreen"
 import VerifyMnemonicScreen from "../screens/VerifyMnemonicScreen"
 import RestoreWalletScreen from "../screens/RestoreWalletScreen"
+import OnboardingViewModel from "../viewmodels/OnboardingViewModel"
 
 type OnboardingStackParamList = {
   GenerateWallet: undefined
@@ -11,17 +12,29 @@ type OnboardingStackParamList = {
   VerifyMnemonic: undefined
 }
 
+type Props = {
+  onComplete: () => void
+}
+
 const Stack = createNativeStackNavigator<OnboardingStackParamList>()
 
 /**
- * ViewModelScope makes `useScopedViewModel(OnboardingViewModel)` resolve the
- * same instance across Generate + Verify + Restore so the mnemonic draft /
- * verification challenge / persist state live for the whole onboarding flow.
- * Cleared automatically when this navigator unmounts.
+ * Sits inside the ViewModelScope and bridges the scoped VM's `navigate$
+ * "done"` event to the parent's onComplete callback so RootNavigator can
+ * flip from Onboarding to the main App stack.
  */
-function OnboardingNavigator(): JSX.Element {
+function OnboardingBridge({ onComplete }: Props): null {
+  const vm = useScopedViewModel(OnboardingViewModel)
+  useEvent(vm.navigate$, event => {
+    if (event === "done") onComplete()
+  })
+  return null
+}
+
+function OnboardingNavigator({ onComplete }: Props): JSX.Element {
   return (
     <ViewModelScope>
+      <OnboardingBridge onComplete={onComplete} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="GenerateWallet" component={GenerateWalletScreen} />
         <Stack.Screen name="RestoreWallet" component={RestoreWalletScreen} />

@@ -6,6 +6,9 @@ const Tokens = {
   // Crypto
   KeyringService: Symbol.for("KeyringService"),
 
+  // Lifecycle
+  AutoLock: Symbol.for("AutoLock"),
+
   // Network — RPC clients
   EvmRpc: Symbol.for("EvmRpc"),
   BitcoinRpc: Symbol.for("BitcoinRpc"),

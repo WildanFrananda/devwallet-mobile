@@ -3,6 +3,7 @@ import { configureDI as configureMvvmDI, getContainer } from "react-native-mobil
 import KeyringService from "../crypto/keyring/keyring.service"
 import KeychainService from "../storage/keychain.service"
 import WalletRepositoryImpl from "../../repositories/wallet.repository.impl"
+import AutoLockService from "../lifecycle/auto-lock.service"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -14,6 +15,7 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.KeyringService, KeyringService)
       getContainer.registerSingleton(Tokens.Keychain, KeychainService)
       getContainer.registerSingleton(Tokens.WalletRepository, WalletRepositoryImpl)
+      getContainer.registerSingleton(Tokens.AutoLock, AutoLockService)
     })
     DIContainer.configured = true
   }
