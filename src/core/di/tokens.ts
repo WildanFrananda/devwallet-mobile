@@ -23,6 +23,8 @@ const Tokens = {
   // Datasources
   BalanceDatasource: Symbol.for("BalanceDatasource"),
   TokenDatasource: Symbol.for("TokenDatasource"),
+  TxHistoryDatasource: Symbol.for("TxHistoryDatasource"),
+  SignerDatasource: Symbol.for("SignerDatasource"),
 
   // Repositories (per feature)
   OnboardingRepository: Symbol.for("OnboardingRepository"),

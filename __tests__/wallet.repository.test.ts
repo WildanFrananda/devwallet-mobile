@@ -4,6 +4,8 @@ import KeyringService from "../src/core/crypto/keyring/keyring.service"
 import KeychainService from "../src/core/storage/keychain.service"
 import BalanceDatasource from "../src/datasources/balance/balance.datasource"
 import TokenDatasource from "../src/datasources/token/token.datasource"
+import TxHistoryDatasource from "../src/datasources/tx-history/tx-history.datasource"
+import SignerDatasource from "../src/datasources/signer/signer.datasource"
 import { Chain } from "../src/core/constants/chains.enum"
 
 const TEST_MNEMONIC = "test test test test test test test test test test test junk"
@@ -33,7 +35,9 @@ function makeRepo(): WalletRepositoryImpl {
     new KeyringService(),
     new KeychainService(),
     new BalanceDatasource(),
-    new TokenDatasource()
+    new TokenDatasource(),
+    new TxHistoryDatasource(),
+    new SignerDatasource()
   )
 }
 

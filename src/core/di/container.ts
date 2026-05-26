@@ -6,6 +6,8 @@ import WalletRepositoryImpl from "../../repositories/wallet.repository.impl"
 import AutoLockService from "../lifecycle/auto-lock.service"
 import BalanceDatasource from "../../datasources/balance/balance.datasource"
 import TokenDatasource from "../../datasources/token/token.datasource"
+import TxHistoryDatasource from "../../datasources/tx-history/tx-history.datasource"
+import SignerDatasource from "../../datasources/signer/signer.datasource"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -18,6 +20,8 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.Keychain, KeychainService)
       getContainer.registerSingleton(Tokens.BalanceDatasource, BalanceDatasource)
       getContainer.registerSingleton(Tokens.TokenDatasource, TokenDatasource)
+      getContainer.registerSingleton(Tokens.TxHistoryDatasource, TxHistoryDatasource)
+      getContainer.registerSingleton(Tokens.SignerDatasource, SignerDatasource)
       getContainer.registerSingleton(Tokens.WalletRepository, WalletRepositoryImpl)
       getContainer.registerSingleton(Tokens.AutoLock, AutoLockService)
     })

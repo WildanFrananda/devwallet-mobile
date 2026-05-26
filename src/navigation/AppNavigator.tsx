@@ -2,9 +2,17 @@ import { type JSX } from "react"
 import { Text, View, StyleSheet } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import TabNavigator from "./TabNavigator"
+import TxHistoryScreen from "../screens/TxHistoryScreen"
+import TxDetailScreen from "../screens/TxDetailScreen"
+import SendScreen from "../screens/SendScreen"
+import type Transaction from "../models/transaction.model"
+import { Chain } from "../core/constants/chains.enum"
 
 type AppStackParamList = {
   Main: undefined
+  TxHistory: { chain: Chain; address: string }
+  TxDetail: { tx: Transaction; chain: Chain }
+  Send: { chain: Chain; fromAddress: string }
   ContractTerminal: undefined
   TxReplay: undefined
   GasOracle: undefined
@@ -24,6 +32,9 @@ function AppNavigator(): JSX.Element {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main" component={TabNavigator} />
+      <Stack.Screen name="TxHistory" component={TxHistoryScreen} />
+      <Stack.Screen name="TxDetail" component={TxDetailScreen} />
+      <Stack.Screen name="Send" component={SendScreen} />
       <Stack.Screen name="ContractTerminal">{() => <PlaceholderScreen label="Contract Terminal" />}</Stack.Screen>
       <Stack.Screen name="TxReplay">{() => <PlaceholderScreen label="Tx Replay" />}</Stack.Screen>
       <Stack.Screen name="GasOracle">{() => <PlaceholderScreen label="Gas Oracle" />}</Stack.Screen>
@@ -37,3 +48,4 @@ const styles = StyleSheet.create({
 })
 
 export default AppNavigator
+export type { AppStackParamList }

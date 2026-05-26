@@ -4,12 +4,16 @@ import KeyringService from "../core/crypto/keyring/keyring.service"
 import KeychainService from "../core/storage/keychain.service"
 import BalanceDatasource from "../datasources/balance/balance.datasource"
 import TokenDatasource from "../datasources/token/token.datasource"
+import TxHistoryDatasource from "../datasources/tx-history/tx-history.datasource"
+import SignerDatasource from "../datasources/signer/signer.datasource"
 import Bip39 from "../core/crypto/bip39"
 import { Chain } from "../core/constants/chains.enum"
 import { Tokens } from "../core/di/tokens"
 import Account from "../models/account.model"
 import Portfolio from "../models/portfolio.model"
 import Token from "../models/token.model"
+import Transaction from "../models/transaction.model"
+import SendDraft from "../models/send-draft.model"
 
 @Injectable()
 class WalletRepositoryImpl extends WalletRepository {
@@ -17,7 +21,9 @@ class WalletRepositoryImpl extends WalletRepository {
     @Inject(Tokens.KeyringService) private readonly keyring: KeyringService,
     @Inject(Tokens.Keychain) private readonly keychain: KeychainService,
     @Inject(Tokens.BalanceDatasource) private readonly balances: BalanceDatasource,
-    @Inject(Tokens.TokenDatasource) private readonly tokens: TokenDatasource
+    @Inject(Tokens.TokenDatasource) private readonly tokens: TokenDatasource,
+    @Inject(Tokens.TxHistoryDatasource) private readonly txHistory: TxHistoryDatasource,
+    @Inject(Tokens.SignerDatasource) private readonly signer: SignerDatasource
   ) {
     super()
   }
@@ -75,6 +81,26 @@ class WalletRepositoryImpl extends WalletRepository {
 
   public override loadTokens(chain: Chain, address: string): Promise<Token[]> {
     return this.tokens.fetch(chain, address)
+  }
+
+  public override loadTxHistory(chain: Chain, address: string, limit: number = 25): Promise<Transaction[]> {
+    return this.txHistory.fetch(chain, address, limit)
+  }
+
+  public override async sendTx(draft: SendDraft): Promise<{ hash: string }> {
+    if (!this.keyring.isUnlocked()) {
+      throw new Error("Keyring locked — call unlock() first")
+    }
+    const account = await this.keyring.deriveAccount(draft.chain, 0)
+    if (account.address.toLowerCase() !== draft.fromAddress.toLowerCase()) {
+      throw new Error("Draft fromAddress does not match derived account")
+    }
+    const { hash } = await this.signer.send(account.privateKey, draft)
+    return { hash }
+  }
+
+  public override waitForConfirmation(chain: Chain, hash: string): Promise<Transaction> {
+    return this.signer.waitForConfirmation(chain, hash)
   }
 
   public override async clear(): Promise<void> {

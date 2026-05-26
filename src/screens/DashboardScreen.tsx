@@ -1,16 +1,21 @@
 import { useCallback, useState, type JSX } from "react"
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useFocusEffect } from "@react-navigation/native"
+import { useFocusEffect, useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
+import type { AppStackParamList } from "../navigation/AppNavigator"
 import WalletViewModel from "../viewmodels/WalletViewModel"
 import BalanceCard from "../components/BalanceCard"
 import NetworkSelector from "../components/NetworkSelector"
 import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
 
+type AppNav = NativeStackNavigationProp<AppStackParamList>
+
 function DashboardScreen(): JSX.Element {
   const vm = useViewModel(WalletViewModel)
+  const nav = useNavigation<AppNav>()
   const state = useStream(vm.portfolio$, vm.portfolio$.value)
   const tokenMap = useStream(vm.tokens$, vm.tokens$.value)
   const [selectorOpen, setSelectorOpen] = useState<boolean>(false)
@@ -74,7 +79,13 @@ function DashboardScreen(): JSX.Element {
           {entries.map(e => {
             onEntryRendered(e.account.chain, e.account.address)
             return (
-              <BalanceCard key={e.account.chain} entry={e} loading={isLoading} tokens={tokenMap[e.account.chain]} />
+              <BalanceCard
+                key={e.account.chain}
+                entry={e}
+                loading={isLoading}
+                tokens={tokenMap[e.account.chain]}
+                onPress={() => nav.navigate("TxHistory", { chain: e.account.chain, address: e.account.address })}
+              />
             )
           })}
           {entries.length === 0 && !isLoading && (

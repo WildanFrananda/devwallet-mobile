@@ -1,20 +1,14 @@
-import { useState, type JSX } from "react"
+import { type JSX } from "react"
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useScopedViewModel, useStream, useEvent } from "react-native-mobile-mvvm"
+import { useScopedViewModel, useStream } from "react-native-mobile-mvvm"
 import OnboardingViewModel from "../viewmodels/OnboardingViewModel"
 
 function VerifyMnemonicScreen(): JSX.Element {
   const vm = useScopedViewModel(OnboardingViewModel)
   const challenge = useStream(vm.verify$, vm.verify$.value)
+  const answers = useStream(vm.verifyAnswers$, vm.verifyAnswers$.value)
   const persist = useStream(vm.persist$, vm.persist$.value)
-  const [answers, setAnswers] = useState<string[]>(["", "", ""])
-
-  useEvent(vm.navigate$, event => {
-    if (event === "done") {
-      // Phase 1 Day 10 wires RootNavigator switch; for now, surface success below.
-    }
-  })
 
   if (!challenge) {
     return (
@@ -37,14 +31,10 @@ function VerifyMnemonicScreen(): JSX.Element {
             <Text style={styles.label}>Word #{wordIndex + 1}</Text>
             <TextInput
               style={styles.input}
-              value={answers[slot]}
+              value={answers[slot] ?? ""}
               autoCapitalize="none"
               autoCorrect={false}
-              onChangeText={text => {
-                const next = [...answers]
-                next[slot] = text
-                setAnswers(next)
-              }}
+              onChangeText={text => vm.setVerifyAnswer(slot, text)}
               placeholder="enter word"
             />
           </View>
@@ -62,11 +52,7 @@ function VerifyMnemonicScreen(): JSX.Element {
           </View>
         )}
 
-        <Button
-          title="Verify"
-          onPress={() => vm.submitVerify(answers, false)}
-          disabled={persist.status === "loading"}
-        />
+        <Button title="Verify" onPress={() => vm.submitVerify(false)} disabled={persist.status === "loading"} />
       </ScrollView>
     </SafeAreaView>
   )

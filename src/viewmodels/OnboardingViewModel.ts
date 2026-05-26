@@ -1,5 +1,12 @@
 import { Inject, Injectable } from "react-native-mobile-mvvm/di"
-import { EventFlow, StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
+import {
+  ComputedStateFlow,
+  EventFlow,
+  StateFlow,
+  UiState,
+  ViewModel,
+  type ReadOnlyStateFlow
+} from "react-native-mobile-mvvm"
 import WalletRepository from "../repositories/wallet.repository"
 import Bip39 from "../core/crypto/bip39"
 import { Tokens } from "../core/di/tokens"
@@ -14,13 +21,27 @@ type VerifyChallenge = {
 class OnboardingViewModel extends ViewModel {
   private readonly _mnemonic = new StateFlow<UiState<string[]>>(UiState.idle())
   private readonly _verify = new StateFlow<VerifyChallenge | null>(null)
+  private readonly _verifyAnswers = new StateFlow<ReadonlyArray<string>>(["", "", ""])
+  private readonly _restoreInput = new StateFlow<string>("")
   private readonly _persist = new StateFlow<UiState<Account>>(UiState.idle())
   private readonly _navigate = new EventFlow<"verify" | "done">()
 
   public readonly mnemonic$ = this._mnemonic.asReadOnly()
   public readonly verify$ = this._verify.asReadOnly()
+  public readonly verifyAnswers$ = this._verifyAnswers.asReadOnly()
+  public readonly restoreInput$ = this._restoreInput.asReadOnly()
   public readonly persist$ = this._persist.asReadOnly()
   public readonly navigate$ = this._navigate.asObservable()
+
+  public readonly restoreWordCount$: ReadOnlyStateFlow<number> = ComputedStateFlow.from(
+    [this._restoreInput],
+    ([raw]) => (raw.trim().length === 0 ? 0 : raw.trim().split(/\s+/).length)
+  )
+
+  public readonly restoreValid$: ReadOnlyStateFlow<boolean> = ComputedStateFlow.from(
+    [this.restoreWordCount$],
+    ([count]) => count === 12 || count === 24
+  )
 
   public constructor(@Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
     super()
@@ -37,10 +58,6 @@ class OnboardingViewModel extends ViewModel {
     }
   }
 
-  /**
-   * Build a random 3-of-12 verification challenge from the current mnemonic
-   * draft. UI prompts user to enter the words at the picked positions.
-   */
   public prepareVerify(): void {
     const state = this._mnemonic.value
     if (state.status !== "success") {
@@ -53,12 +70,20 @@ class OnboardingViewModel extends ViewModel {
       indices,
       expected: indices.map(i => words[i] ?? "")
     }
+    this._verifyAnswers.value = indices.map(() => "")
     this._navigate.emit("verify")
   }
 
-  public submitVerify(answers: ReadonlyArray<string>, requireBiometric: boolean = true): void {
+  public setVerifyAnswer(slot: number, value: string): void {
+    const next = [...this._verifyAnswers.value]
+    next[slot] = value
+    this._verifyAnswers.value = next
+  }
+
+  public submitVerify(requireBiometric: boolean = true): void {
     const challenge = this._verify.value
     const draft = this._mnemonic.value
+    const answers = this._verifyAnswers.value
     if (!challenge || draft.status !== "success") {
       this._persist.value = UiState.error("No challenge active")
       return
@@ -84,12 +109,12 @@ class OnboardingViewModel extends ViewModel {
     })
   }
 
-  /**
-   * Restore path: user typed an existing mnemonic. Validate BIP39 checksum,
-   * then persist + load keyring. No verify step needed.
-   */
-  public submitRestore(rawInput: string, requireBiometric: boolean = true): void {
-    const phrase = rawInput.trim().toLowerCase().replace(/\s+/g, " ")
+  public setRestoreInput(value: string): void {
+    this._restoreInput.value = value
+  }
+
+  public submitRestore(requireBiometric: boolean = true): void {
+    const phrase = this._restoreInput.value.trim().toLowerCase().replace(/\s+/g, " ")
     const wordCount = phrase.split(" ").length
     if (wordCount !== 12 && wordCount !== 24) {
       this._persist.value = UiState.error(`Expected 12 or 24 words, got ${wordCount}`)
@@ -113,6 +138,8 @@ class OnboardingViewModel extends ViewModel {
   public reset(): void {
     this._mnemonic.value = UiState.idle()
     this._verify.value = null
+    this._verifyAnswers.value = ["", "", ""]
+    this._restoreInput.value = ""
     this._persist.value = UiState.idle()
   }
 

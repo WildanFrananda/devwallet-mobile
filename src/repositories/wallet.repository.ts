@@ -1,6 +1,8 @@
 import Account from "../models/account.model"
 import Portfolio from "../models/portfolio.model"
 import Token from "../models/token.model"
+import Transaction from "../models/transaction.model"
+import SendDraft from "../models/send-draft.model"
 import { Chain } from "../core/constants/chains.enum"
 
 /**
@@ -38,6 +40,19 @@ abstract class WalletRepository {
 
   /** Fetch ERC-20 / SPL token balances for a single account. */
   public abstract loadTokens(chain: Chain, address: string): Promise<Token[]>
+
+  /** Fetch the most recent transactions for a single account. */
+  public abstract loadTxHistory(chain: Chain, address: string, limit?: number): Promise<Transaction[]>
+
+  /**
+   * Sign + broadcast a transaction using the keyring's private key for the
+   * draft's chain + sender. Returns the broadcast hash immediately;
+   * confirmation is polled separately via `waitForConfirmation`.
+   */
+  public abstract sendTx(draft: SendDraft): Promise<{ hash: string }>
+
+  /** Wait for the receipt on-chain. */
+  public abstract waitForConfirmation(chain: Chain, hash: string): Promise<Transaction>
 
   /** Wipe keychain + in-memory keyring. */
   public abstract clear(): Promise<void>

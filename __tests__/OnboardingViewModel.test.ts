@@ -5,6 +5,8 @@ import KeyringService from "../src/core/crypto/keyring/keyring.service"
 import KeychainService from "../src/core/storage/keychain.service"
 import BalanceDatasource from "../src/datasources/balance/balance.datasource"
 import TokenDatasource from "../src/datasources/token/token.datasource"
+import TxHistoryDatasource from "../src/datasources/tx-history/tx-history.datasource"
+import SignerDatasource from "../src/datasources/signer/signer.datasource"
 
 const keychainState: { mnemonic: string | null } = { mnemonic: null }
 
@@ -30,7 +32,9 @@ function makeVm(): OnboardingViewModel {
     new KeyringService(),
     new KeychainService(),
     new BalanceDatasource(),
-    new TokenDatasource()
+    new TokenDatasource(),
+    new TxHistoryDatasource(),
+    new SignerDatasource()
   )
   return new OnboardingViewModel(wallet)
 }
@@ -79,7 +83,8 @@ describe("OnboardingViewModel", () => {
     expect(c).not.toBeNull()
     if (!c) return
 
-    vm.submitVerify(c.expected, false)
+    c.expected.forEach((w, i) => vm.setVerifyAnswer(i, w))
+    vm.submitVerify(false)
     expect(vm.persist$.value.status).toBe("loading")
 
     for (let i = 0; i < 50; i++) {
@@ -93,7 +98,10 @@ describe("OnboardingViewModel", () => {
     const vm = makeVm()
     vm.generate(128)
     vm.prepareVerify()
-    vm.submitVerify(["wrong", "wrong", "wrong"], false)
+    vm.setVerifyAnswer(0, "wrong")
+    vm.setVerifyAnswer(1, "wrong")
+    vm.setVerifyAnswer(2, "wrong")
+    vm.submitVerify(false)
     const state = vm.persist$.value
     expect(state.status).toBe("error")
     if (state.status === "error") {
@@ -104,7 +112,8 @@ describe("OnboardingViewModel", () => {
   it("submitRestore with valid 12-word phrase persists wallet", async () => {
     const vm = makeVm()
     const TEST = "test test test test test test test test test test test junk"
-    vm.submitRestore(TEST, false)
+    vm.setRestoreInput(TEST)
+    vm.submitRestore(false)
     expect(vm.persist$.value.status).toBe("loading")
     for (let i = 0; i < 50; i++) {
       if (vm.persist$.value.status !== "loading") break
@@ -115,7 +124,8 @@ describe("OnboardingViewModel", () => {
 
   it("submitRestore rejects wrong word count", () => {
     const vm = makeVm()
-    vm.submitRestore("only three words", false)
+    vm.setRestoreInput("only three words")
+    vm.submitRestore(false)
     const state = vm.persist$.value
     expect(state.status).toBe("error")
     if (state.status === "error") {
@@ -125,7 +135,8 @@ describe("OnboardingViewModel", () => {
 
   it("submitRestore rejects invalid checksum", async () => {
     const vm = makeVm()
-    vm.submitRestore("test test test test test test test test test test test test", false)
+    vm.setRestoreInput("test test test test test test test test test test test test")
+    vm.submitRestore(false)
     for (let i = 0; i < 50; i++) {
       if (vm.persist$.value.status !== "loading") break
       await new Promise<void>(resolve => setTimeout(() => resolve(), 50))

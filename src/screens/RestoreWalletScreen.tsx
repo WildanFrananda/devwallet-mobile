@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react"
+import { type JSX } from "react"
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useScopedViewModel, useStream } from "react-native-mobile-mvvm"
@@ -6,11 +6,12 @@ import OnboardingViewModel from "../viewmodels/OnboardingViewModel"
 
 function RestoreWalletScreen(): JSX.Element {
   const vm = useScopedViewModel(OnboardingViewModel)
+  const phrase = useStream(vm.restoreInput$, vm.restoreInput$.value)
+  const wordCount = useStream(vm.restoreWordCount$, vm.restoreWordCount$.value)
+  const valid = useStream(vm.restoreValid$, vm.restoreValid$.value)
   const persist = useStream(vm.persist$, vm.persist$.value)
-  const [phrase, setPhrase] = useState<string>("")
 
-  const wordCount = phrase.trim().length === 0 ? 0 : phrase.trim().split(/\s+/).length
-  const validLength = wordCount === 12 || wordCount === 24
+  const canSubmit = valid && persist.status !== "loading"
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -21,7 +22,7 @@ function RestoreWalletScreen(): JSX.Element {
         <TextInput
           style={styles.input}
           value={phrase}
-          onChangeText={setPhrase}
+          onChangeText={vm.setRestoreInput.bind(vm)}
           placeholder="word1 word2 word3 ..."
           autoCapitalize="none"
           autoCorrect={false}
@@ -32,7 +33,7 @@ function RestoreWalletScreen(): JSX.Element {
 
         <Text style={styles.counter}>
           {wordCount} word{wordCount === 1 ? "" : "s"}
-          {wordCount > 0 && !validLength ? " — need 12 or 24" : ""}
+          {wordCount > 0 && !valid ? " — need 12 or 24" : ""}
         </Text>
 
         {persist.status === "loading" && <ActivityIndicator />}
@@ -47,11 +48,7 @@ function RestoreWalletScreen(): JSX.Element {
           </View>
         )}
 
-        <Button
-          title="Restore wallet"
-          onPress={() => vm.submitRestore(phrase, false)}
-          disabled={!validLength || persist.status === "loading"}
-        />
+        <Button title="Restore wallet" onPress={() => vm.submitRestore(false)} disabled={!canSubmit} />
       </ScrollView>
     </SafeAreaView>
   )
