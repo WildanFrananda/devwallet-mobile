@@ -6,6 +6,7 @@ import Bip39 from "../core/crypto/bip39"
 import { Tokens } from "../core/di/tokens"
 import DIContainer from "../core/di/container"
 import Account from "../models/account.model"
+import { Chain } from "../core/constants/chains.enum"
 
 const TEST_MNEMONIC = "test test test test test test test test test test test junk"
 const EXPECTED_EVM_0 = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -25,7 +26,7 @@ function GenerateWalletScreen(): JSX.Element {
       const mnemonicValid = Bip39.validate(TEST_MNEMONIC)
       const svc = DIContainer.instance.resolve<KeyringService>(Tokens.KeyringService)
       svc.loadMnemonic(TEST_MNEMONIC)
-      const accounts = svc.deriveEvmAll(0)
+      const accounts = svc.deriveSupportedAll(0)
       setState({ mnemonicValid, diResolved: true, accounts })
     } catch (err) {
       setState({
@@ -63,8 +64,17 @@ function GenerateWalletScreen(): JSX.Element {
             {rowStatus("DI resolve KeyringService", state.diResolved)}
             {rowStatus(
               "All 5 EVM addresses match expected",
-              state.accounts.length === 5 &&
-                state.accounts.every(a => a.address.toLowerCase() === EXPECTED_EVM_0.toLowerCase())
+              state.accounts
+                .filter(a => a.chain.startsWith("evm:"))
+                .every(a => a.address.toLowerCase() === EXPECTED_EVM_0.toLowerCase())
+            )}
+            {rowStatus(
+              "Bitcoin testnet derives tb1q address",
+              state.accounts.some(a => a.chain === Chain.BITCOIN_TESTNET && a.address.startsWith("tb1q"))
+            )}
+            {rowStatus(
+              "Solana devnet derives base58 address",
+              state.accounts.some(a => a.chain === Chain.SOLANA_DEVNET && a.address.length >= 32)
             )}
 
             {state.error && (

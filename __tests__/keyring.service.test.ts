@@ -38,12 +38,22 @@ describe("Bip44Paths", () => {
     expect(Bip44Paths.path(Chain.EVM_BASE_SEPOLIA, 0)).toBe("m/44'/60'/0'/0/0")
   })
 
+  it("uses BIP84 purpose for Bitcoin testnet", () => {
+    expect(Bip44Paths.purpose(Chain.BITCOIN_TESTNET)).toBe(84)
+    expect(Bip44Paths.path(Chain.BITCOIN_TESTNET, 0)).toBe("m/84'/1'/0'/0/0")
+  })
+
   it("uses SLIP-0044 coin types for non-EVM", () => {
     expect(Bip44Paths.coinType(Chain.BITCOIN_TESTNET)).toBe(1)
     expect(Bip44Paths.coinType(Chain.SOLANA_DEVNET)).toBe(501)
     expect(Bip44Paths.coinType(Chain.COSMOS_THETA)).toBe(118)
     expect(Bip44Paths.coinType(Chain.XRPL_TESTNET)).toBe(144)
     expect(Bip44Paths.coinType(Chain.STARKNET_SEPOLIA)).toBe(9004)
+  })
+
+  it("hardenedPath produces Solana SLIP-0010 path", () => {
+    expect(Bip44Paths.hardenedPath(Chain.SOLANA_DEVNET, 0)).toBe("m/44'/501'/0'/0'")
+    expect(Bip44Paths.hardenedPath(Chain.SOLANA_DEVNET, 3)).toBe("m/44'/501'/0'/3'")
   })
 
   it("supports account + change overrides", () => {
@@ -89,10 +99,59 @@ describe("KeyringService", () => {
     })
   })
 
-  it("rejects non-EVM chains in Day 2", () => {
+  it("derives native segwit Bitcoin testnet address (tb1q...)", () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    expect(() => svc.deriveAccount(Chain.SOLANA_DEVNET)).toThrow("not implemented yet")
+    const account = svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
+    expect(account.chain).toBe(Chain.BITCOIN_TESTNET)
+    expect(account.address.startsWith("tb1q")).toBe(true)
+    expect(account.path).toBe("m/84'/1'/0'/0/0")
+  })
+
+  it("Bitcoin derivation is deterministic", () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    const a0 = svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
+    const a1 = svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
+    expect(a0.address).toBe(a1.address)
+  })
+
+  it("derives Solana devnet base58 address", () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    const account = svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
+    expect(account.chain).toBe(Chain.SOLANA_DEVNET)
+    expect(account.path).toBe("m/44'/501'/0'/0'")
+    // Solana addresses are base58, 32-44 chars
+    expect(account.address.length).toBeGreaterThanOrEqual(32)
+    expect(account.address.length).toBeLessThanOrEqual(44)
+    expect(/^[1-9A-HJ-NP-Za-km-z]+$/.test(account.address)).toBe(true)
+  })
+
+  it("Solana derivation is deterministic across address indices", () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    const a0 = svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
+    const a1 = svc.deriveAccount(Chain.SOLANA_DEVNET, 1)
+    expect(a0.address).not.toBe(a1.address)
+    const a0again = svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
+    expect(a0again.address).toBe(a0.address)
+  })
+
+  it("deriveSupportedAll returns 7 accounts (5 EVM + Bitcoin + Solana)", () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    const accounts = svc.deriveSupportedAll(0)
+    expect(accounts).toHaveLength(7)
+    const chains = accounts.map(a => a.chain)
+    expect(chains).toContain(Chain.BITCOIN_TESTNET)
+    expect(chains).toContain(Chain.SOLANA_DEVNET)
+  })
+
+  it("rejects not-yet-supported chains (Cosmos)", () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    expect(() => svc.deriveAccount(Chain.COSMOS_THETA)).toThrow("not implemented yet")
   })
 
   it("clear() locks the keyring", () => {

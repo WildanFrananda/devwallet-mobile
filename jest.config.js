@@ -10,11 +10,25 @@ const esmPackages = [
   "tsyringe",
   "@scure",
   "@noble",
-  "viem"
+  "@solana",
+  "rpc-websockets",
+  "viem",
+  "bitcoinjs-lib",
+  "uint8array-tools",
+  "ed25519-hd-key",
+  "varuint-bitcoin",
+  "@bitcoinerlab",
+  "uuid"
 ].join("|")
 
 module.exports = {
   preset: "@react-native/jest-preset",
   transformIgnorePatterns: [`node_modules/(?!(${esmPackages})/)`],
-  setupFiles: ["<rootDir>/jest.setup.js"]
+  setupFiles: ["<rootDir>/jest.setup.js"],
+  moduleNameMapper: {
+    "^@solana/(codecs-numbers|codecs-strings|codecs-core|codecs-data-structures|codecs|errors|options|addresses)$":
+      "<rootDir>/node_modules/@solana/$1/dist/index.node.cjs",
+    "^rpc-websockets$": "<rootDir>/node_modules/rpc-websockets/dist/index.cjs",
+    "^rpc-websockets/dist/lib/client$": "<rootDir>/node_modules/rpc-websockets/dist/index.cjs"
+  }
 }
