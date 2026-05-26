@@ -84,6 +84,32 @@ class OnboardingViewModel extends ViewModel {
     })
   }
 
+  /**
+   * Restore path: user typed an existing mnemonic. Validate BIP39 checksum,
+   * then persist + load keyring. No verify step needed.
+   */
+  public submitRestore(rawInput: string, requireBiometric: boolean = true): void {
+    const phrase = rawInput.trim().toLowerCase().replace(/\s+/g, " ")
+    const wordCount = phrase.split(" ").length
+    if (wordCount !== 12 && wordCount !== 24) {
+      this._persist.value = UiState.error(`Expected 12 or 24 words, got ${wordCount}`)
+      return
+    }
+
+    this._persist.value = UiState.loading()
+    void this.launch(async signal => {
+      try {
+        const account = await this.wallet.restore(phrase, requireBiometric)
+        if (signal.aborted) return
+        this._persist.value = UiState.success(account)
+        this._navigate.emit("done")
+      } catch (err) {
+        if (signal.aborted) return
+        this._persist.value = UiState.error(err instanceof Error ? err.message : String(err))
+      }
+    })
+  }
+
   public reset(): void {
     this._mnemonic.value = UiState.idle()
     this._verify.value = null

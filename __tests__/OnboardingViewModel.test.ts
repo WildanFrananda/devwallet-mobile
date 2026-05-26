@@ -94,6 +94,42 @@ describe("OnboardingViewModel", () => {
     }
   })
 
+  it("submitRestore with valid 12-word phrase persists wallet", async () => {
+    const vm = makeVm()
+    const TEST = "test test test test test test test test test test test junk"
+    vm.submitRestore(TEST, false)
+    expect(vm.persist$.value.status).toBe("loading")
+    for (let i = 0; i < 50; i++) {
+      if (vm.persist$.value.status !== "loading") break
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 50))
+    }
+    expect(vm.persist$.value.status).toBe("success")
+  }, 10000)
+
+  it("submitRestore rejects wrong word count", () => {
+    const vm = makeVm()
+    vm.submitRestore("only three words", false)
+    const state = vm.persist$.value
+    expect(state.status).toBe("error")
+    if (state.status === "error") {
+      expect(state.message).toMatch(/12 or 24/)
+    }
+  })
+
+  it("submitRestore rejects invalid checksum", async () => {
+    const vm = makeVm()
+    vm.submitRestore("test test test test test test test test test test test test", false)
+    for (let i = 0; i < 50; i++) {
+      if (vm.persist$.value.status !== "loading") break
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 50))
+    }
+    const state = vm.persist$.value
+    expect(state.status).toBe("error")
+    if (state.status === "error") {
+      expect(state.message).toMatch(/Invalid mnemonic/i)
+    }
+  }, 10000)
+
   it("reset clears all state", () => {
     const vm = makeVm()
     vm.generate(128)

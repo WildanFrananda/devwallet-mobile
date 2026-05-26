@@ -30,7 +30,12 @@ function GenerateWalletScreen(): JSX.Element {
           Write down these 12 words. Keep them offline — anyone with this phrase owns the wallet.
         </Text>
 
-        {mnemonicState.status === "idle" && <Button title="Generate 12-word phrase" onPress={() => vm.generate(128)} />}
+        {mnemonicState.status === "idle" && (
+          <View style={styles.actions}>
+            <Button title="Generate 12-word phrase" onPress={() => vm.generate(128)} />
+            <Button title="Restore from existing phrase" onPress={() => nav.navigate("RestoreWallet")} />
+          </View>
+        )}
 
         {mnemonicState.status === "loading" && <ActivityIndicator />}
 
