@@ -1,5 +1,6 @@
 import Account from "../models/account.model"
 import Portfolio from "../models/portfolio.model"
+import Token from "../models/token.model"
 import { Chain } from "../core/constants/chains.enum"
 
 /**
@@ -34,6 +35,9 @@ abstract class WalletRepository {
    * success/error entries — never throws for individual chain failures.
    */
   public abstract loadPortfolio(addressIndex?: number): Promise<Portfolio>
+
+  /** Fetch ERC-20 / SPL token balances for a single account. */
+  public abstract loadTokens(chain: Chain, address: string): Promise<Token[]>
 
   /** Wipe keychain + in-memory keyring. */
   public abstract clear(): Promise<void>

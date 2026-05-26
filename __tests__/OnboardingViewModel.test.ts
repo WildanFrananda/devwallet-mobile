@@ -4,6 +4,7 @@ import WalletRepositoryImpl from "../src/repositories/wallet.repository.impl"
 import KeyringService from "../src/core/crypto/keyring/keyring.service"
 import KeychainService from "../src/core/storage/keychain.service"
 import BalanceDatasource from "../src/datasources/balance/balance.datasource"
+import TokenDatasource from "../src/datasources/token/token.datasource"
 
 const keychainState: { mnemonic: string | null } = { mnemonic: null }
 
@@ -25,7 +26,12 @@ jest.mock("react-native-keychain", () => ({
 }))
 
 function makeVm(): OnboardingViewModel {
-  const wallet = new WalletRepositoryImpl(new KeyringService(), new KeychainService(), new BalanceDatasource())
+  const wallet = new WalletRepositoryImpl(
+    new KeyringService(),
+    new KeychainService(),
+    new BalanceDatasource(),
+    new TokenDatasource()
+  )
   return new OnboardingViewModel(wallet)
 }
 

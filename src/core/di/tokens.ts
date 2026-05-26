@@ -22,6 +22,7 @@ const Tokens = {
 
   // Datasources
   BalanceDatasource: Symbol.for("BalanceDatasource"),
+  TokenDatasource: Symbol.for("TokenDatasource"),
 
   // Repositories (per feature)
   OnboardingRepository: Symbol.for("OnboardingRepository"),

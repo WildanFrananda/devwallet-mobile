@@ -3,18 +3,21 @@ import WalletRepository from "./wallet.repository"
 import KeyringService from "../core/crypto/keyring/keyring.service"
 import KeychainService from "../core/storage/keychain.service"
 import BalanceDatasource from "../datasources/balance/balance.datasource"
+import TokenDatasource from "../datasources/token/token.datasource"
 import Bip39 from "../core/crypto/bip39"
 import { Chain } from "../core/constants/chains.enum"
 import { Tokens } from "../core/di/tokens"
 import Account from "../models/account.model"
 import Portfolio from "../models/portfolio.model"
+import Token from "../models/token.model"
 
 @Injectable()
 class WalletRepositoryImpl extends WalletRepository {
   public constructor(
     @Inject(Tokens.KeyringService) private readonly keyring: KeyringService,
     @Inject(Tokens.Keychain) private readonly keychain: KeychainService,
-    @Inject(Tokens.BalanceDatasource) private readonly balances: BalanceDatasource
+    @Inject(Tokens.BalanceDatasource) private readonly balances: BalanceDatasource,
+    @Inject(Tokens.TokenDatasource) private readonly tokens: TokenDatasource
   ) {
     super()
   }
@@ -68,6 +71,10 @@ class WalletRepositoryImpl extends WalletRepository {
     const accounts = await this.deriveAll(addressIndex)
     const entries = await this.balances.fetchMany(accounts)
     return new Portfolio(entries)
+  }
+
+  public override loadTokens(chain: Chain, address: string): Promise<Token[]> {
+    return this.tokens.fetch(chain, address)
   }
 
   public override async clear(): Promise<void> {

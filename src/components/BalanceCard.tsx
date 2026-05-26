@@ -1,11 +1,14 @@
 import { type JSX } from "react"
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native"
 import type { PortfolioEntry } from "../models/portfolio.model"
+import type Token from "../models/token.model"
 import { NetworkRegistry } from "../core/constants/networks"
+import TokenList from "./TokenList"
 
 type Props = {
   entry: PortfolioEntry
   loading?: boolean
+  tokens?: ReadonlyArray<Token>
 }
 
 function truncate(address: string, head: number = 6, tail: number = 4): string {
@@ -13,7 +16,7 @@ function truncate(address: string, head: number = 6, tail: number = 4): string {
   return `${address.slice(0, head)}…${address.slice(-tail)}`
 }
 
-function BalanceCard({ entry, loading = false }: Props): JSX.Element {
+function BalanceCard({ entry, loading = false, tokens }: Props): JSX.Element {
   const cfg = NetworkRegistry.get(entry.account.chain)
 
   return (
@@ -33,6 +36,8 @@ function BalanceCard({ entry, loading = false }: Props): JSX.Element {
           <Text style={styles.errorText}>— {entry.error ?? "not available"}</Text>
         )}
       </View>
+
+      <TokenList tokens={tokens} />
     </View>
   )
 }
