@@ -7,7 +7,10 @@ const esmPackages = [
   "react-native-gesture-handler",
   "react-native-screens",
   "react-native-safe-area-context",
-  "tsyringe"
+  "tsyringe",
+  "@scure",
+  "@noble",
+  "viem"
 ].join("|")
 
 module.exports = {

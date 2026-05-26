@@ -1,13 +1,12 @@
-import "reflect-metadata"
 import React from "react"
 import { StatusBar, StyleSheet, useColorScheme } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { NavigationContainer } from "@react-navigation/native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
-import { configureDI } from "./src/core/di/container"
+import DIContainer from "./src/core/di/container"
 import RootNavigator from "./src/navigation/RootNavigator"
 
-configureDI()
+DIContainer.configure()
 
 function App() {
   const isDarkMode = useColorScheme() === "dark"

@@ -1,16 +1,22 @@
 import "reflect-metadata"
 import { configureDI as configureMvvmDI, getContainer } from "react-native-mobile-mvvm/di"
 
-let configured = false
+class DIContainer {
+  private static configured = false
 
-function configureDI(): void {
-  if (configured) return
-  configureMvvmDI(() => {
-    // Phase 1+ registrations go here, e.g.:
-    //   container.registerSingleton(Tokens.KeyringService, KeyringService)
-    //   container.register(Tokens.WalletRepository, { useClass: WalletRepositoryImpl })
-  })
-  configured = true
+  public static configure(): void {
+    if (DIContainer.configured) return
+    configureMvvmDI(() => {
+      // Phase 1+ registrations go here, e.g.:
+      //   container.registerSingleton(Tokens.KeyringService, KeyringService)
+      //   container.register(Tokens.WalletRepository, { useClass: WalletRepositoryImpl })
+    })
+    DIContainer.configured = true
+  }
+
+  public static get instance(): typeof getContainer {
+    return getContainer
+  }
 }
 
-export { getContainer, configureDI }
+export default DIContainer
