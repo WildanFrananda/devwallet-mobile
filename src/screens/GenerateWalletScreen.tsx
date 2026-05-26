@@ -1,61 +1,48 @@
 import { type JSX } from "react"
 import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useViewModel, useUiState } from "react-native-mobile-mvvm"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { useScopedViewModel, useStream, useEvent } from "react-native-mobile-mvvm"
 import OnboardingViewModel from "../viewmodels/OnboardingViewModel"
+import MnemonicGrid from "../components/MnemonicGrid"
 
-function row(label: string, ok: boolean): JSX.Element {
-  return (
-    <View key={label} style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={ok ? styles.ok : styles.fail}>{ok ? "PASS ✓" : "FAIL ✗"}</Text>
-    </View>
-  )
-}
+type OnboardingNav = NativeStackNavigationProp<{
+  GenerateWallet: undefined
+  RestoreWallet: undefined
+  VerifyMnemonic: undefined
+}>
 
 function GenerateWalletScreen(): JSX.Element {
-  const vm = useViewModel(OnboardingViewModel)
-  const { data, isLoading, isError, error } = useUiState(vm.report$)
+  const vm = useScopedViewModel(OnboardingViewModel)
+  const nav = useNavigation<OnboardingNav>()
+  const mnemonicState = useStream(vm.mnemonic$, vm.mnemonic$.value)
+
+  useEvent(vm.navigate$, event => {
+    if (event === "verify") nav.navigate("VerifyMnemonic")
+  })
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Phase 1 — Day 4 PoC</Text>
+        <Text style={styles.title}>Generate wallet</Text>
         <Text style={styles.subtitle}>
-          ViewModel → KeyringService → 6 derivers. Derives 10 supported chain addresses from the BIP44 test mnemonic.
+          Write down these 12 words. Keep them offline — anyone with this phrase owns the wallet.
         </Text>
 
-        <Button title="Run KeyringService PoC" onPress={() => vm.runPoc()} />
+        {mnemonicState.status === "idle" && <Button title="Generate 12-word phrase" onPress={() => vm.generate(128)} />}
 
-        {isLoading && <ActivityIndicator />}
+        {mnemonicState.status === "loading" && <ActivityIndicator />}
 
-        {isError && (
-          <View style={styles.cardFail}>
-            <Text style={styles.label}>Error</Text>
-            <Text style={styles.error}>{error}</Text>
-          </View>
-        )}
+        {mnemonicState.status === "error" && <Text style={styles.error}>{mnemonicState.message}</Text>}
 
-        {data && (
+        {mnemonicState.status === "success" && (
           <>
-            {row("BIP39 validate", data.mnemonicValid)}
-            {row("DI resolve KeyringService", data.diResolved)}
-            {row("All 5 EVM addresses match expected", data.evmAllMatch)}
-            {row("Bitcoin testnet tb1q", data.bitcoinOk)}
-            {row("Solana devnet base58", data.solanaOk)}
-            {row("Cosmos Hub cosmos1 bech32", data.cosmosOk)}
-            {row("XRPL classic r-address", data.xrplOk)}
-            {row("StarkNet stark pubkey", data.starknetOk)}
-
-            {data.accounts.map(a => (
-              <View key={a.chain} style={styles.account}>
-                <Text style={styles.chainName}>{a.chain}</Text>
-                <Text style={styles.label}>Path</Text>
-                <Text style={styles.mono}>{a.path}</Text>
-                <Text style={styles.label}>Address</Text>
-                <Text style={styles.mono}>{a.address}</Text>
-              </View>
-            ))}
+            <MnemonicGrid words={mnemonicState.data} />
+            <View style={styles.actions}>
+              <Button title="Regenerate" onPress={() => vm.generate(128)} />
+              <Button title="I've written it down" onPress={() => vm.prepareVerify()} />
+            </View>
           </>
         )}
       </ScrollView>
@@ -65,25 +52,11 @@ function GenerateWalletScreen(): JSX.Element {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  container: { padding: 20, gap: 12 },
+  container: { padding: 20, gap: 16 },
   title: { fontSize: 22, fontWeight: "600" },
   subtitle: { fontSize: 14, opacity: 0.7 },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 12,
-    backgroundColor: "#F2F2F2",
-    borderRadius: 6
-  },
-  rowLabel: { fontSize: 14 },
-  ok: { color: "#0A7", fontWeight: "700" },
-  fail: { color: "#B00020", fontWeight: "700" },
-  account: { padding: 12, backgroundColor: "#EEF6FB", borderRadius: 8, gap: 4 },
-  chainName: { fontSize: 14, fontWeight: "700" },
-  cardFail: { padding: 12, backgroundColor: "#FCE8E6", borderRadius: 8 },
-  label: { fontSize: 11, fontWeight: "600", opacity: 0.6, marginTop: 4 },
-  mono: { fontFamily: "Courier", fontSize: 11 },
-  error: { color: "#B00020", fontSize: 12 }
+  actions: { gap: 8 },
+  error: { color: "#B00020", fontSize: 13 }
 })
 
 export default GenerateWalletScreen

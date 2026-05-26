@@ -1,75 +1,103 @@
 import { inject, injectable } from "tsyringe"
-import { StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
+import { EventFlow, StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import WalletRepository from "../repositories/wallet.repository"
 import Bip39 from "../core/crypto/bip39"
 import { Tokens } from "../core/di/tokens"
 import Account from "../models/account.model"
-import { Chain } from "../core/constants/chains.enum"
 
-const TEST_MNEMONIC = "test test test test test test test test test test test junk"
-const EXPECTED_EVM_0 = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-
-type DerivationReport = {
-  mnemonicValid: boolean
-  diResolved: boolean
-  evmAllMatch: boolean
-  bitcoinOk: boolean
-  solanaOk: boolean
-  cosmosOk: boolean
-  xrplOk: boolean
-  starknetOk: boolean
-  accounts: Account[]
+type VerifyChallenge = {
+  indices: ReadonlyArray<number>
+  expected: ReadonlyArray<string>
 }
 
 @injectable()
 class OnboardingViewModel extends ViewModel {
-  private readonly _report = new StateFlow<UiState<DerivationReport>>(UiState.idle())
-  public readonly report$ = this._report.asReadOnly()
+  private readonly _mnemonic = new StateFlow<UiState<string[]>>(UiState.idle())
+  private readonly _verify = new StateFlow<VerifyChallenge | null>(null)
+  private readonly _persist = new StateFlow<UiState<Account>>(UiState.idle())
+  private readonly _navigate = new EventFlow<"verify" | "done">()
+
+  public readonly mnemonic$ = this._mnemonic.asReadOnly()
+  public readonly verify$ = this._verify.asReadOnly()
+  public readonly persist$ = this._persist.asReadOnly()
+  public readonly navigate$ = this._navigate.asObservable()
 
   public constructor(@inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
     super()
   }
 
+  public generate(strength: 128 | 256 = 128): void {
+    this._mnemonic.value = UiState.loading()
+    try {
+      const phrase = Bip39.generate(strength)
+      const words = phrase.split(" ")
+      this._mnemonic.value = UiState.success(words)
+    } catch (err) {
+      this._mnemonic.value = UiState.error(err instanceof Error ? err.message : String(err))
+    }
+  }
+
   /**
-   * Phase 1 PoC: feeds the BIP44 test mnemonic through WalletRepository
-   * (skips keychain persistence — just loads the keyring) and reports per-
-   * chain validity. Phase 1 Day 8+ swaps this for the real Generate flow.
+   * Build a random 3-of-12 verification challenge from the current mnemonic
+   * draft. UI prompts user to enter the words at the picked positions.
    */
-  public runPoc(): void {
-    this._report.value = UiState.loading()
+  public prepareVerify(): void {
+    const state = this._mnemonic.value
+    if (state.status !== "success") {
+      this._persist.value = UiState.error("Generate a mnemonic first")
+      return
+    }
+    const words = state.data
+    const indices = OnboardingViewModel.pickIndices(words.length, 3)
+    this._verify.value = {
+      indices,
+      expected: indices.map(i => words[i] ?? "")
+    }
+    this._navigate.emit("verify")
+  }
+
+  public submitVerify(answers: ReadonlyArray<string>, requireBiometric: boolean = true): void {
+    const challenge = this._verify.value
+    const draft = this._mnemonic.value
+    if (!challenge || draft.status !== "success") {
+      this._persist.value = UiState.error("No challenge active")
+      return
+    }
+    const ok = challenge.expected.every((w, i) => (answers[i] ?? "").trim().toLowerCase() === w.toLowerCase())
+    if (!ok) {
+      this._persist.value = UiState.error("Words don't match. Try again.")
+      return
+    }
+
+    this._persist.value = UiState.loading()
     void this.launch(async signal => {
       try {
-        const mnemonicValid = Bip39.validate(TEST_MNEMONIC)
-        // Skip keychain in PoC — directly load the test mnemonic into the
-        // in-memory keyring. createFromMnemonic would prompt biometric.
-        if (!this.wallet.isUnlocked()) {
-          await this.wallet.createFromMnemonic(TEST_MNEMONIC, false)
-        }
-        const accounts = await this.wallet.deriveAll(0)
+        const phrase = draft.data.join(" ")
+        const account = await this.wallet.createFromMnemonic(phrase, requireBiometric)
         if (signal.aborted) return
-
-        const evmAccounts = accounts.filter(a => a.chain.startsWith("evm:"))
-        const report: DerivationReport = {
-          mnemonicValid,
-          diResolved: true,
-          evmAllMatch:
-            evmAccounts.length === 5 &&
-            evmAccounts.every(a => a.address.toLowerCase() === EXPECTED_EVM_0.toLowerCase()),
-          bitcoinOk: accounts.some(a => a.chain === Chain.BITCOIN_TESTNET && a.address.startsWith("tb1q")),
-          solanaOk: accounts.some(a => a.chain === Chain.SOLANA_DEVNET && a.address.length >= 32),
-          cosmosOk: accounts.some(a => a.chain === Chain.COSMOS_THETA && a.address.startsWith("cosmos1")),
-          xrplOk: accounts.some(a => a.chain === Chain.XRPL_TESTNET && a.address.startsWith("r")),
-          starknetOk: accounts.some(a => a.chain === Chain.STARKNET_SEPOLIA && a.address.startsWith("0x")),
-          accounts
-        }
-        this._report.value = UiState.success(report)
+        this._persist.value = UiState.success(account)
+        this._navigate.emit("done")
       } catch (err) {
         if (signal.aborted) return
-        this._report.value = UiState.error(err instanceof Error ? err.message : String(err))
+        this._persist.value = UiState.error(err instanceof Error ? err.message : String(err))
       }
     })
+  }
+
+  public reset(): void {
+    this._mnemonic.value = UiState.idle()
+    this._verify.value = null
+    this._persist.value = UiState.idle()
+  }
+
+  private static pickIndices(total: number, count: number): number[] {
+    const picked = new Set<number>()
+    while (picked.size < count) {
+      picked.add(Math.floor(Math.random() * total))
+    }
+    return [...picked].sort((a, b) => a - b)
   }
 }
 
 export default OnboardingViewModel
-export type { DerivationReport }
+export type { VerifyChallenge }

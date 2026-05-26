@@ -4,12 +4,22 @@ import WalletRepositoryImpl from "../src/repositories/wallet.repository.impl"
 import KeyringService from "../src/core/crypto/keyring/keyring.service"
 import KeychainService from "../src/core/storage/keychain.service"
 
+const keychainState: { mnemonic: string | null } = { mnemonic: null }
+
 jest.mock("react-native-keychain", () => ({
-  ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: "WHEN_UNLOCKED_THIS_DEVICE_ONLY" },
-  ACCESS_CONTROL: { BIOMETRY_ANY_OR_DEVICE_PASSCODE: "BIOMETRY_ANY_OR_DEVICE_PASSCODE" },
-  setGenericPassword: jest.fn().mockResolvedValue({ service: "test" }),
-  getGenericPassword: jest.fn().mockResolvedValue(false),
-  resetGenericPassword: jest.fn().mockResolvedValue(true),
+  ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: "x" },
+  ACCESS_CONTROL: { BIOMETRY_ANY_OR_DEVICE_PASSCODE: "x" },
+  setGenericPassword: jest.fn((_user: string, password: string) => {
+    keychainState.mnemonic = password
+    return Promise.resolve({ service: "mock" })
+  }),
+  getGenericPassword: jest.fn(() =>
+    Promise.resolve(keychainState.mnemonic ? { username: "primary", password: keychainState.mnemonic } : false)
+  ),
+  resetGenericPassword: jest.fn(() => {
+    keychainState.mnemonic = null
+    return Promise.resolve(true)
+  }),
   getSupportedBiometryType: jest.fn().mockResolvedValue(null)
 }))
 
@@ -19,21 +29,78 @@ function makeVm(): OnboardingViewModel {
 }
 
 describe("OnboardingViewModel", () => {
-  it("starts in idle state", () => {
-    const vm = makeVm()
-    expect(vm.report$.value.status).toBe("idle")
+  beforeEach(() => {
+    keychainState.mnemonic = null
   })
 
-  it("transitions idle → loading → success after runPoc()", async () => {
+  it("starts idle on all state flows", () => {
     const vm = makeVm()
-    vm.runPoc()
-    expect(vm.report$.value.status).toBe("loading")
+    expect(vm.mnemonic$.value.status).toBe("idle")
+    expect(vm.verify$.value).toBeNull()
+    expect(vm.persist$.value.status).toBe("idle")
+  })
+
+  it("generate() produces a 12-word success state", () => {
+    const vm = makeVm()
+    vm.generate(128)
+    const state = vm.mnemonic$.value
+    expect(state.status).toBe("success")
+    if (state.status === "success") {
+      expect(state.data).toHaveLength(12)
+    }
+  })
+
+  it("prepareVerify picks 3 distinct sorted indices", () => {
+    const vm = makeVm()
+    vm.generate(128)
+    vm.prepareVerify()
+    const c = vm.verify$.value
+    expect(c).not.toBeNull()
+    if (c) {
+      expect(c.indices).toHaveLength(3)
+      expect(new Set(c.indices).size).toBe(3)
+      expect([...c.indices]).toEqual([...c.indices].sort((a, b) => a - b))
+      expect(c.expected).toHaveLength(3)
+    }
+  })
+
+  it("submitVerify with correct answers persists wallet and reaches success", async () => {
+    const vm = makeVm()
+    vm.generate(128)
+    vm.prepareVerify()
+    const c = vm.verify$.value
+    expect(c).not.toBeNull()
+    if (!c) return
+
+    vm.submitVerify(c.expected, false)
+    expect(vm.persist$.value.status).toBe("loading")
 
     for (let i = 0; i < 50; i++) {
-      if (vm.report$.value.status !== "loading") break
+      if (vm.persist$.value.status !== "loading") break
       await new Promise<void>(resolve => setTimeout(() => resolve(), 50))
     }
-
-    expect(vm.report$.value.status).toBe("success")
+    expect(vm.persist$.value.status).toBe("success")
   }, 10000)
+
+  it("submitVerify with wrong answers errors out", () => {
+    const vm = makeVm()
+    vm.generate(128)
+    vm.prepareVerify()
+    vm.submitVerify(["wrong", "wrong", "wrong"], false)
+    const state = vm.persist$.value
+    expect(state.status).toBe("error")
+    if (state.status === "error") {
+      expect(state.message).toMatch(/don't match/i)
+    }
+  })
+
+  it("reset clears all state", () => {
+    const vm = makeVm()
+    vm.generate(128)
+    vm.prepareVerify()
+    vm.reset()
+    expect(vm.mnemonic$.value.status).toBe("idle")
+    expect(vm.verify$.value).toBeNull()
+    expect(vm.persist$.value.status).toBe("idle")
+  })
 })
