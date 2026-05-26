@@ -18,7 +18,12 @@ const esmPackages = [
   "ed25519-hd-key",
   "varuint-bitcoin",
   "@bitcoinerlab",
-  "uuid"
+  "uuid",
+  "@cosmjs",
+  "xrpl",
+  "ripple-",
+  "starknet",
+  "@starknet-io"
 ].join("|")
 
 module.exports = {

@@ -21,12 +21,12 @@ type RunState = {
 function GenerateWalletScreen(): JSX.Element {
   const [state, setState] = useState<RunState | null>(null)
 
-  function onRun(): void {
+  async function onRun(): Promise<void> {
     try {
       const mnemonicValid = Bip39.validate(TEST_MNEMONIC)
       const svc = DIContainer.instance.resolve<KeyringService>(Tokens.KeyringService)
       svc.loadMnemonic(TEST_MNEMONIC)
-      const accounts = svc.deriveSupportedAll(0)
+      const accounts = await svc.deriveSupportedAll(0)
       setState({ mnemonicValid, diResolved: true, accounts })
     } catch (err) {
       setState({
@@ -56,7 +56,7 @@ function GenerateWalletScreen(): JSX.Element {
           mnemonic; all must match Hardhat account #0.
         </Text>
 
-        <Button title="Run KeyringService PoC" onPress={onRun} />
+        <Button title="Run KeyringService PoC" onPress={() => void onRun()} />
 
         {state && (
           <>
@@ -75,6 +75,18 @@ function GenerateWalletScreen(): JSX.Element {
             {rowStatus(
               "Solana devnet derives base58 address",
               state.accounts.some(a => a.chain === Chain.SOLANA_DEVNET && a.address.length >= 32)
+            )}
+            {rowStatus(
+              "Cosmos Hub derives cosmos1 bech32",
+              state.accounts.some(a => a.chain === Chain.COSMOS_THETA && a.address.startsWith("cosmos1"))
+            )}
+            {rowStatus(
+              "XRPL derives classic r-address",
+              state.accounts.some(a => a.chain === Chain.XRPL_TESTNET && a.address.startsWith("r"))
+            )}
+            {rowStatus(
+              "StarkNet derives stark pubkey",
+              state.accounts.some(a => a.chain === Chain.STARKNET_SEPOLIA && a.address.startsWith("0x"))
             )}
 
             {state.error && (

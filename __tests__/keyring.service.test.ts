@@ -67,91 +67,114 @@ describe("KeyringService", () => {
     expect(svc.isUnlocked()).toBe(false)
   })
 
-  it("throws on derive when locked", () => {
+  it("rejects derive when locked", async () => {
     const svc = new KeyringService()
-    expect(() => svc.deriveAccount(Chain.EVM_SEPOLIA)).toThrow("Keyring locked")
+    await expect(svc.deriveAccount(Chain.EVM_SEPOLIA)).rejects.toThrow("Keyring locked")
   })
 
-  it("derives Hardhat account #0 for Sepolia", () => {
+  it("derives Hardhat account #0 for Sepolia", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const account = svc.deriveAccount(Chain.EVM_SEPOLIA, 0)
+    const account = await svc.deriveAccount(Chain.EVM_SEPOLIA, 0)
     expect(account.address.toLowerCase()).toBe(EXPECTED_EVM_INDEX_0.toLowerCase())
     expect(account.path).toBe("m/44'/60'/0'/0/0")
     expect(account.chain).toBe(Chain.EVM_SEPOLIA)
     expect(account.index).toBe(0)
   })
 
-  it("derives Hardhat account #1 at index 1", () => {
+  it("derives Hardhat account #1 at index 1", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const account = svc.deriveAccount(Chain.EVM_SEPOLIA, 1)
+    const account = await svc.deriveAccount(Chain.EVM_SEPOLIA, 1)
     expect(account.address.toLowerCase()).toBe(EXPECTED_EVM_INDEX_1.toLowerCase())
   })
 
-  it("all EVM chains derive the same address at index 0 (same coin type)", () => {
+  it("all EVM chains derive the same address at index 0 (same coin type)", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const accounts = svc.deriveEvmAll(0)
+    const accounts = await svc.deriveEvmAll(0)
     expect(accounts).toHaveLength(5)
     accounts.forEach(a => {
       expect(a.address.toLowerCase()).toBe(EXPECTED_EVM_INDEX_0.toLowerCase())
     })
   })
 
-  it("derives native segwit Bitcoin testnet address (tb1q...)", () => {
+  it("derives native segwit Bitcoin testnet address (tb1q...)", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const account = svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
+    const account = await svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
     expect(account.chain).toBe(Chain.BITCOIN_TESTNET)
     expect(account.address.startsWith("tb1q")).toBe(true)
     expect(account.path).toBe("m/84'/1'/0'/0/0")
   })
 
-  it("Bitcoin derivation is deterministic", () => {
+  it("Bitcoin derivation is deterministic", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const a0 = svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
-    const a1 = svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
+    const a0 = await svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
+    const a1 = await svc.deriveAccount(Chain.BITCOIN_TESTNET, 0)
     expect(a0.address).toBe(a1.address)
   })
 
-  it("derives Solana devnet base58 address", () => {
+  it("derives Solana devnet base58 address", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const account = svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
+    const account = await svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
     expect(account.chain).toBe(Chain.SOLANA_DEVNET)
     expect(account.path).toBe("m/44'/501'/0'/0'")
-    // Solana addresses are base58, 32-44 chars
     expect(account.address.length).toBeGreaterThanOrEqual(32)
     expect(account.address.length).toBeLessThanOrEqual(44)
     expect(/^[1-9A-HJ-NP-Za-km-z]+$/.test(account.address)).toBe(true)
   })
 
-  it("Solana derivation is deterministic across address indices", () => {
+  it("Solana derivation is deterministic across address indices", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const a0 = svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
-    const a1 = svc.deriveAccount(Chain.SOLANA_DEVNET, 1)
+    const a0 = await svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
+    const a1 = await svc.deriveAccount(Chain.SOLANA_DEVNET, 1)
     expect(a0.address).not.toBe(a1.address)
-    const a0again = svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
+    const a0again = await svc.deriveAccount(Chain.SOLANA_DEVNET, 0)
     expect(a0again.address).toBe(a0.address)
   })
 
-  it("deriveSupportedAll returns 7 accounts (5 EVM + Bitcoin + Solana)", () => {
+  it("derives Cosmos Hub bech32 address (cosmos1...)", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const accounts = svc.deriveSupportedAll(0)
-    expect(accounts).toHaveLength(7)
+    const account = await svc.deriveAccount(Chain.COSMOS_THETA, 0)
+    expect(account.chain).toBe(Chain.COSMOS_THETA)
+    expect(account.address.startsWith("cosmos1")).toBe(true)
+    expect(account.path).toBe("m/44'/118'/0'/0/0")
+  })
+
+  it("derives XRPL classic address (starts with r)", async () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    const account = await svc.deriveAccount(Chain.XRPL_TESTNET, 0)
+    expect(account.chain).toBe(Chain.XRPL_TESTNET)
+    expect(account.address.startsWith("r")).toBe(true)
+    expect(account.path).toBe("m/44'/144'/0'/0/0")
+  })
+
+  it("derives StarkNet pubkey (hex 0x...)", async () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    const account = await svc.deriveAccount(Chain.STARKNET_SEPOLIA, 0)
+    expect(account.chain).toBe(Chain.STARKNET_SEPOLIA)
+    expect(account.address.startsWith("0x")).toBe(true)
+    expect(account.path).toBe("m/44'/9004'/0'/0/0")
+  })
+
+  it("deriveSupportedAll returns 10 accounts (5 EVM + BTC + SOL + Cosmos + XRPL + Stark)", async () => {
+    const svc = new KeyringService()
+    svc.loadMnemonic(TEST_MNEMONIC)
+    const accounts = await svc.deriveSupportedAll(0)
+    expect(accounts).toHaveLength(10)
     const chains = accounts.map(a => a.chain)
     expect(chains).toContain(Chain.BITCOIN_TESTNET)
     expect(chains).toContain(Chain.SOLANA_DEVNET)
-  })
-
-  it("rejects not-yet-supported chains (Cosmos)", () => {
-    const svc = new KeyringService()
-    svc.loadMnemonic(TEST_MNEMONIC)
-    expect(() => svc.deriveAccount(Chain.COSMOS_THETA)).toThrow("not implemented yet")
+    expect(chains).toContain(Chain.COSMOS_THETA)
+    expect(chains).toContain(Chain.XRPL_TESTNET)
+    expect(chains).toContain(Chain.STARKNET_SEPOLIA)
   })
 
   it("clear() locks the keyring", () => {
@@ -162,10 +185,10 @@ describe("KeyringService", () => {
     expect(svc.isUnlocked()).toBe(false)
   })
 
-  it("Account.toJSON omits privateKey", () => {
+  it("Account.toJSON omits privateKey", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
-    const account = svc.deriveAccount(Chain.EVM_SEPOLIA)
+    const account = await svc.deriveAccount(Chain.EVM_SEPOLIA)
     const json = account.toJSON() as Record<string, unknown>
     expect(json.privateKey).toBeUndefined()
     expect(json.address).toBe(account.address)
