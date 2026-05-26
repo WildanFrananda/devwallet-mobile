@@ -1,0 +1,56 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`KeyringService snapshot derives a stable address set from the BIP44 test mnemonic 1`] = `
+[
+  {
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "chain": "evm:sepolia",
+    "path": "m/44'/60'/0'/0/0",
+  },
+  {
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "chain": "evm:holesky",
+    "path": "m/44'/60'/0'/0/0",
+  },
+  {
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "chain": "evm:polygon-amoy",
+    "path": "m/44'/60'/0'/0/0",
+  },
+  {
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "chain": "evm:base-sepolia",
+    "path": "m/44'/60'/0'/0/0",
+  },
+  {
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "chain": "evm:local",
+    "path": "m/44'/60'/0'/0/0",
+  },
+  {
+    "address": "tb1qquv9lg5g2r4jkr0ahun0ddfg5xntxjelvmc7t8",
+    "chain": "bitcoin:testnet",
+    "path": "m/84'/1'/0'/0/0",
+  },
+  {
+    "address": "oeYf6KAJkLYhBuR8CiGc6L4D4Xtfepr85fuDgA9kq96",
+    "chain": "solana:devnet",
+    "path": "m/44'/501'/0'/0'",
+  },
+  {
+    "address": "cosmos15yk64u7zc9g9k2yr2wmzeva5qgwxps6yxj00e7",
+    "chain": "cosmos:theta-testnet",
+    "path": "m/44'/118'/0'/0/0",
+  },
+  {
+    "address": "rnrbiYDUYTJS4JVdSV5FtyCj4HFuRjfLKM",
+    "chain": "xrpl:testnet",
+    "path": "m/44'/144'/0'/0/0",
+  },
+  {
+    "address": "0x0407f0ecd1ec6159e6a7c70084aaa7d693d9113149b80ab72618602a185e2c1f2b008b26308abcc83bc7b85e81d147f40c3383713e54acb6d0cc21d7092e3e9a1e",
+    "chain": "starknet:sepolia",
+    "path": "m/44'/9004'/0'/0/0",
+  },
+]
+`;

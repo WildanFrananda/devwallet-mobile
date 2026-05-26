@@ -1,102 +1,53 @@
-import { useState, type JSX } from "react"
-import { View, Text, Button, StyleSheet, ScrollView } from "react-native"
+import { type JSX } from "react"
+import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import KeyringService from "../core/crypto/keyring/keyring.service"
-import Bip39 from "../core/crypto/bip39"
-import { Tokens } from "../core/di/tokens"
-import DIContainer from "../core/di/container"
-import Account from "../models/account.model"
-import { Chain } from "../core/constants/chains.enum"
+import { useViewModel, useUiState } from "react-native-mobile-mvvm"
+import OnboardingViewModel from "../viewmodels/OnboardingViewModel"
 
-const TEST_MNEMONIC = "test test test test test test test test test test test junk"
-const EXPECTED_EVM_0 = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-
-type RunState = {
-  mnemonicValid: boolean
-  diResolved: boolean
-  accounts: Account[]
-  error?: string
+function row(label: string, ok: boolean): JSX.Element {
+  return (
+    <View key={label} style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={ok ? styles.ok : styles.fail}>{ok ? "PASS ✓" : "FAIL ✗"}</Text>
+    </View>
+  )
 }
 
 function GenerateWalletScreen(): JSX.Element {
-  const [state, setState] = useState<RunState | null>(null)
-
-  async function onRun(): Promise<void> {
-    try {
-      const mnemonicValid = Bip39.validate(TEST_MNEMONIC)
-      const svc = DIContainer.instance.resolve<KeyringService>(Tokens.KeyringService)
-      svc.loadMnemonic(TEST_MNEMONIC)
-      const accounts = await svc.deriveSupportedAll(0)
-      setState({ mnemonicValid, diResolved: true, accounts })
-    } catch (err) {
-      setState({
-        mnemonicValid: false,
-        diResolved: false,
-        accounts: [],
-        error: err instanceof Error ? err.message : String(err)
-      })
-    }
-  }
-
-  function rowStatus(label: string, ok: boolean): JSX.Element {
-    return (
-      <View style={styles.row}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        <Text style={ok ? styles.ok : styles.fail}>{ok ? "PASS ✓" : "FAIL ✗"}</Text>
-      </View>
-    )
-  }
+  const vm = useViewModel(OnboardingViewModel)
+  const { data, isLoading, isError, error } = useUiState(vm.report$)
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Phase 1 — Day 2 PoC</Text>
+        <Text style={styles.title}>Phase 1 — Day 4 PoC</Text>
         <Text style={styles.subtitle}>
-          Validates BIP39 + BIP44 + KeyringService DI chain on device. Derives 5 EVM accounts from the BIP44 test
-          mnemonic; all must match Hardhat account #0.
+          ViewModel → KeyringService → 6 derivers. Derives 10 supported chain addresses from the BIP44 test mnemonic.
         </Text>
 
-        <Button title="Run KeyringService PoC" onPress={() => void onRun()} />
+        <Button title="Run KeyringService PoC" onPress={() => vm.runPoc()} />
 
-        {state && (
+        {isLoading && <ActivityIndicator />}
+
+        {isError && (
+          <View style={styles.cardFail}>
+            <Text style={styles.label}>Error</Text>
+            <Text style={styles.error}>{error}</Text>
+          </View>
+        )}
+
+        {data && (
           <>
-            {rowStatus("BIP39 validate", state.mnemonicValid)}
-            {rowStatus("DI resolve KeyringService", state.diResolved)}
-            {rowStatus(
-              "All 5 EVM addresses match expected",
-              state.accounts
-                .filter(a => a.chain.startsWith("evm:"))
-                .every(a => a.address.toLowerCase() === EXPECTED_EVM_0.toLowerCase())
-            )}
-            {rowStatus(
-              "Bitcoin testnet derives tb1q address",
-              state.accounts.some(a => a.chain === Chain.BITCOIN_TESTNET && a.address.startsWith("tb1q"))
-            )}
-            {rowStatus(
-              "Solana devnet derives base58 address",
-              state.accounts.some(a => a.chain === Chain.SOLANA_DEVNET && a.address.length >= 32)
-            )}
-            {rowStatus(
-              "Cosmos Hub derives cosmos1 bech32",
-              state.accounts.some(a => a.chain === Chain.COSMOS_THETA && a.address.startsWith("cosmos1"))
-            )}
-            {rowStatus(
-              "XRPL derives classic r-address",
-              state.accounts.some(a => a.chain === Chain.XRPL_TESTNET && a.address.startsWith("r"))
-            )}
-            {rowStatus(
-              "StarkNet derives stark pubkey",
-              state.accounts.some(a => a.chain === Chain.STARKNET_SEPOLIA && a.address.startsWith("0x"))
-            )}
+            {row("BIP39 validate", data.mnemonicValid)}
+            {row("DI resolve KeyringService", data.diResolved)}
+            {row("All 5 EVM addresses match expected", data.evmAllMatch)}
+            {row("Bitcoin testnet tb1q", data.bitcoinOk)}
+            {row("Solana devnet base58", data.solanaOk)}
+            {row("Cosmos Hub cosmos1 bech32", data.cosmosOk)}
+            {row("XRPL classic r-address", data.xrplOk)}
+            {row("StarkNet stark pubkey", data.starknetOk)}
 
-            {state.error && (
-              <View style={styles.cardFail}>
-                <Text style={styles.label}>Error</Text>
-                <Text style={styles.error}>{state.error}</Text>
-              </View>
-            )}
-
-            {state.accounts.map(a => (
+            {data.accounts.map(a => (
               <View key={a.chain} style={styles.account}>
                 <Text style={styles.chainName}>{a.chain}</Text>
                 <Text style={styles.label}>Path</Text>

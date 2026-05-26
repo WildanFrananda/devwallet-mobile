@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { configureDI as configureMvvmDI, getContainer } from "react-native-mobile-mvvm/di"
 import KeyringService from "../crypto/keyring/keyring.service"
+import KeychainService from "../storage/keychain.service"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -10,6 +11,7 @@ class DIContainer {
     if (DIContainer.configured) return
     configureMvvmDI(() => {
       getContainer.registerSingleton(Tokens.KeyringService, KeyringService)
+      getContainer.registerSingleton(Tokens.Keychain, KeychainService)
     })
     DIContainer.configured = true
   }
