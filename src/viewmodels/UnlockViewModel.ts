@@ -1,17 +1,17 @@
-import { inject, injectable } from "tsyringe"
+import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import { EventFlow, StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import WalletRepository from "../repositories/wallet.repository"
 import { Tokens } from "../core/di/tokens"
 import Account from "../models/account.model"
 
-@injectable()
+@Injectable()
 class UnlockViewModel extends ViewModel {
   private readonly _state = new StateFlow<UiState<Account>>(UiState.idle())
   private readonly _unlocked = new EventFlow<Account>()
   public readonly state$ = this._state.asReadOnly()
   public readonly unlocked$ = this._unlocked.asObservable()
 
-  public constructor(@inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
+  public constructor(@Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
     super()
   }
 

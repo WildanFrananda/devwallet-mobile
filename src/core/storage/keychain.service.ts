@@ -1,5 +1,5 @@
 import * as Keychain from "react-native-keychain"
-import { injectable } from "tsyringe"
+import { Injectable } from "react-native-mobile-mvvm/di"
 
 const SERVICE_NAME = "com.devwallet.mnemonic"
 const USERNAME = "primary"
@@ -10,7 +10,7 @@ const USERNAME = "primary"
  * Android fingerprint). Phase 1 stores the raw mnemonic — Phase 2 may swap
  * to an encrypted blob keyed by a session passphrase.
  */
-@injectable()
+@Injectable()
 class KeychainService {
   public async hasMnemonic(): Promise<boolean> {
     const stored = await Keychain.getGenericPassword({ service: SERVICE_NAME })

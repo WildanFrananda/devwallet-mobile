@@ -1,4 +1,4 @@
-import { inject, injectable } from "tsyringe"
+import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import { StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import { takeUntil } from "rxjs"
 import WalletRepository from "../repositories/wallet.repository"
@@ -7,14 +7,14 @@ import { Tokens } from "../core/di/tokens"
 
 type AppRoute = "onboarding" | "unlock" | "app"
 
-@injectable()
+@Injectable()
 class RootViewModel extends ViewModel {
   private readonly _route = new StateFlow<UiState<AppRoute>>(UiState.loading())
   public readonly route$ = this._route.asReadOnly()
 
   public constructor(
-    @inject(Tokens.WalletRepository) private readonly wallet: WalletRepository,
-    @inject(Tokens.AutoLock) private readonly autoLock: AutoLockService
+    @Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository,
+    @Inject(Tokens.AutoLock) private readonly autoLock: AutoLockService
   ) {
     super()
   }

@@ -1,6 +1,6 @@
-import { type JSX, useEffect } from "react"
+import { type JSX } from "react"
 import { ActivityIndicator, View, StyleSheet, Text } from "react-native"
-import { useViewModel, useStream } from "react-native-mobile-mvvm"
+import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
 import RootViewModel from "../viewmodels/RootViewModel"
 import OnboardingNavigator from "./OnboardingNavigator"
 import AppNavigator from "./AppNavigator"
@@ -10,9 +10,7 @@ function RootNavigator(): JSX.Element {
   const vm = useViewModel(RootViewModel)
   const route = useStream(vm.route$, vm.route$.value)
 
-  useEffect(() => {
-    vm.bootstrap()
-  }, [vm])
+  useInit(() => vm.bootstrap())
 
   if (route.status === "loading" || route.status === "idle") {
     return (

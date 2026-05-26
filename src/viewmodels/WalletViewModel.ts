@@ -1,15 +1,15 @@
-import { inject, injectable } from "tsyringe"
+import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import { StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import WalletRepository from "../repositories/wallet.repository"
 import { Tokens } from "../core/di/tokens"
 import Portfolio from "../models/portfolio.model"
 
-@injectable()
+@Injectable()
 class WalletViewModel extends ViewModel {
   private readonly _portfolio = new StateFlow<UiState<Portfolio>>(UiState.idle())
   public readonly portfolio$ = this._portfolio.asReadOnly()
 
-  public constructor(@inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
+  public constructor(@Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
     super()
   }
 

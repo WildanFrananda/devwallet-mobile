@@ -1,6 +1,7 @@
 import { type JSX } from "react"
 import { Text, View, StyleSheet } from "react-native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import DashboardScreen from "../screens/DashboardScreen"
 
 type TabParamList = {
   Wallet: undefined
@@ -22,7 +23,7 @@ function PlaceholderScreen({ label }: { label: string }): JSX.Element {
 function TabNavigator(): JSX.Element {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="Wallet">{() => <PlaceholderScreen label="Wallet" />}</Tab.Screen>
+      <Tab.Screen name="Wallet" component={DashboardScreen} />
       <Tab.Screen name="Faucet">{() => <PlaceholderScreen label="Faucet" />}</Tab.Screen>
       <Tab.Screen name="RpcInspector">{() => <PlaceholderScreen label="RPC Inspector" />}</Tab.Screen>
       <Tab.Screen name="Webhook">{() => <PlaceholderScreen label="Webhook" />}</Tab.Screen>

@@ -1,6 +1,6 @@
 import { AppState, type AppStateStatus, type NativeEventSubscription } from "react-native"
 import { EventFlow } from "react-native-mobile-mvvm"
-import { inject, injectable } from "tsyringe"
+import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import KeyringService from "../crypto/keyring/keyring.service"
 import { Tokens } from "../di/tokens"
 
@@ -11,7 +11,7 @@ const DEFAULT_THRESHOLD_MS = 5 * 60 * 1000
  * than the threshold, wipe the in-memory keyring (mnemonic stays in keychain
  * for re-unlock). UI listens to `locked$` and routes to UnlockScreen.
  */
-@injectable()
+@Injectable()
 class AutoLockService {
   private readonly _locked = new EventFlow<void>()
   public readonly locked$ = this._locked.asObservable()
@@ -20,7 +20,7 @@ class AutoLockService {
   private subscription: NativeEventSubscription | null = null
   private thresholdMs: number = DEFAULT_THRESHOLD_MS
 
-  public constructor(@inject(Tokens.KeyringService) private readonly keyring: KeyringService) {}
+  public constructor(@Inject(Tokens.KeyringService) private readonly keyring: KeyringService) {}
 
   public start(thresholdMs: number = DEFAULT_THRESHOLD_MS): void {
     this.thresholdMs = thresholdMs

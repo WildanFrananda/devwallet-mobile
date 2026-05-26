@@ -1,4 +1,4 @@
-import { inject, injectable } from "tsyringe"
+import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import { EventFlow, StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import WalletRepository from "../repositories/wallet.repository"
 import Bip39 from "../core/crypto/bip39"
@@ -10,7 +10,7 @@ type VerifyChallenge = {
   expected: ReadonlyArray<string>
 }
 
-@injectable()
+@Injectable()
 class OnboardingViewModel extends ViewModel {
   private readonly _mnemonic = new StateFlow<UiState<string[]>>(UiState.idle())
   private readonly _verify = new StateFlow<VerifyChallenge | null>(null)
@@ -22,7 +22,7 @@ class OnboardingViewModel extends ViewModel {
   public readonly persist$ = this._persist.asReadOnly()
   public readonly navigate$ = this._navigate.asObservable()
 
-  public constructor(@inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
+  public constructor(@Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
     super()
   }
 

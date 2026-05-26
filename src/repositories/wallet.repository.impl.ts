@@ -1,4 +1,4 @@
-import { inject, injectable } from "tsyringe"
+import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import WalletRepository from "./wallet.repository"
 import KeyringService from "../core/crypto/keyring/keyring.service"
 import KeychainService from "../core/storage/keychain.service"
@@ -9,12 +9,12 @@ import { Tokens } from "../core/di/tokens"
 import Account from "../models/account.model"
 import Portfolio from "../models/portfolio.model"
 
-@injectable()
+@Injectable()
 class WalletRepositoryImpl extends WalletRepository {
   public constructor(
-    @inject(Tokens.KeyringService) private readonly keyring: KeyringService,
-    @inject(Tokens.Keychain) private readonly keychain: KeychainService,
-    @inject(Tokens.BalanceDatasource) private readonly balances: BalanceDatasource
+    @Inject(Tokens.KeyringService) private readonly keyring: KeyringService,
+    @Inject(Tokens.Keychain) private readonly keychain: KeychainService,
+    @Inject(Tokens.BalanceDatasource) private readonly balances: BalanceDatasource
   ) {
     super()
   }

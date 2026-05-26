@@ -1,4 +1,4 @@
-import { injectable } from "tsyringe"
+import { Injectable } from "react-native-mobile-mvvm/di"
 import { HDKey } from "@scure/bip32"
 import Bip39 from "../bip39"
 import { Chain } from "../../constants/chains.enum"
@@ -17,7 +17,7 @@ import StarknetDeriver from "../derivers/starknet.deriver"
  * for the requested chain. Add a new chain by appending a new deriver to
  * the list — no method here changes.
  */
-@injectable()
+@Injectable()
 class KeyringService {
   private root: HDKey | null = null
   private seed: Uint8Array | null = null

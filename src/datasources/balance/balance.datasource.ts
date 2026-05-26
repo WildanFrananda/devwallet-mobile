@@ -1,4 +1,4 @@
-import { injectable } from "tsyringe"
+import { Injectable } from "react-native-mobile-mvvm/di"
 import { Chain } from "../../core/constants/chains.enum"
 import Account from "../../models/account.model"
 import Balance from "../../models/balance.model"
@@ -20,7 +20,7 @@ type FetchResult = {
  * a registered fetcher (Cosmos, StarkNet in Phase 1) get a graceful
  * `unsupported` error instead of throwing.
  */
-@injectable()
+@Injectable()
 class BalanceDatasource {
   private readonly fetchers: ReadonlyArray<ChainBalanceFetcher> = [
     new EvmBalanceFetcher(),
