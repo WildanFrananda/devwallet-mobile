@@ -1,5 +1,7 @@
 import "reflect-metadata"
 import { configureDI as configureMvvmDI, getContainer } from "react-native-mobile-mvvm/di"
+import KeyringService from "../crypto/keyring/keyring.service"
+import { Tokens } from "./tokens"
 
 class DIContainer {
   private static configured = false
@@ -7,9 +9,7 @@ class DIContainer {
   public static configure(): void {
     if (DIContainer.configured) return
     configureMvvmDI(() => {
-      // Phase 1+ registrations go here, e.g.:
-      //   container.registerSingleton(Tokens.KeyringService, KeyringService)
-      //   container.register(Tokens.WalletRepository, { useClass: WalletRepositoryImpl })
+      getContainer.registerSingleton(Tokens.KeyringService, KeyringService)
     })
     DIContainer.configured = true
   }

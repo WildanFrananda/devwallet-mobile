@@ -24,6 +24,20 @@ class NetworkRegistry {
       explorerUrl: "https://holesky.etherscan.io",
       faucetUrl: null
     },
+    [Chain.EVM_POLYGON_AMOY]: {
+      chain: Chain.EVM_POLYGON_AMOY,
+      name: "Polygon Amoy",
+      rpcUrl: "",
+      explorerUrl: "https://amoy.polygonscan.com",
+      faucetUrl: null
+    },
+    [Chain.EVM_BASE_SEPOLIA]: {
+      chain: Chain.EVM_BASE_SEPOLIA,
+      name: "Base Sepolia",
+      rpcUrl: "",
+      explorerUrl: "https://sepolia.basescan.org",
+      faucetUrl: null
+    },
     [Chain.EVM_LOCAL]: {
       chain: Chain.EVM_LOCAL,
       name: "Anvil local",
