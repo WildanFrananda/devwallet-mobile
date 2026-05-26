@@ -62,6 +62,13 @@ class KeyringService {
     return this.root !== null && this.seed !== null && this.mnemonic !== null
   }
 
+  public getMnemonic(): string {
+    if (!this.mnemonic) {
+      throw new Error("Keyring locked — no mnemonic in memory")
+    }
+    return this.mnemonic
+  }
+
   public async deriveAccount(chain: Chain, addressIndex: number = 0): Promise<Account> {
     const ctx = this.context()
     const deriver = this.derivers.find(d => d.supports(chain))

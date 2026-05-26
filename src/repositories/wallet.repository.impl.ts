@@ -95,7 +95,8 @@ class WalletRepositoryImpl extends WalletRepository {
     if (account.address.toLowerCase() !== draft.fromAddress.toLowerCase()) {
       throw new Error("Draft fromAddress does not match derived account")
     }
-    const { hash } = await this.signer.send(account.privateKey, draft)
+    const secrets = { privateKey: account.privateKey, mnemonic: this.keyring.getMnemonic() }
+    const { hash } = await this.signer.send(secrets, draft)
     return { hash }
   }
 

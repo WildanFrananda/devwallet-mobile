@@ -19,6 +19,7 @@ const esmPackages = [
   "varuint-bitcoin",
   "@bitcoinerlab",
   "uuid",
+  "ecpair",
   "@cosmjs",
   "xrpl",
   "ripple-",

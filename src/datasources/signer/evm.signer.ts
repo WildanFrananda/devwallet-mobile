@@ -4,7 +4,7 @@ import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
 import type SendDraft from "../../models/send-draft.model"
 import Transaction from "../../models/transaction.model"
-import type { ChainSigner, SendResult } from "./chain-signer.interface"
+import type { ChainSigner, SendResult, SignerSecrets } from "./chain-signer.interface"
 
 class EvmSigner implements ChainSigner {
   private static readonly EVM_CHAINS: ReadonlyArray<Chain> = [
@@ -19,9 +19,9 @@ class EvmSigner implements ChainSigner {
     return EvmSigner.EVM_CHAINS.includes(chain)
   }
 
-  public async send(privateKey: string, draft: SendDraft): Promise<SendResult> {
+  public async send(secrets: SignerSecrets, draft: SendDraft): Promise<SendResult> {
     const cfg = NetworkRegistry.get(draft.chain)
-    const account = privateKeyToAccount(privateKey as Hex)
+    const account = privateKeyToAccount(secrets.privateKey as Hex)
     const transport = http(cfg.rpcUrl)
     const walletClient = createWalletClient({ account, transport })
     const publicClient = createPublicClient({ transport })

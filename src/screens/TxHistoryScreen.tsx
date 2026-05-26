@@ -15,6 +15,7 @@ type AppStackParamList = {
   TxHistory: { chain: Chain; address: string }
   TxDetail: { tx: Transaction; chain: Chain }
   Send: { chain: Chain; fromAddress: string }
+  Receive: { chain: Chain; address: string }
 }
 
 type AppNav = NativeStackNavigationProp<AppStackParamList, "TxHistory">
@@ -39,7 +40,10 @@ function TxHistoryScreen(): JSX.Element {
               {cfg.name} · {truncateAddress(address)}
             </Text>
           </View>
-          <Button title="Send" onPress={() => nav.navigate("Send", { chain, fromAddress: address })} />
+          <View style={styles.headerActions}>
+            <Button title="Receive" onPress={() => nav.navigate("Receive", { chain, address })} />
+            <Button title="Send" onPress={() => nav.navigate("Send", { chain, fromAddress: address })} />
+          </View>
         </View>
       </View>
 
@@ -93,6 +97,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingVertical: 12 },
   headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
   headerTextCol: { flex: 1 },
+  headerActions: { flexDirection: "row", gap: 8 },
   title: { fontSize: 22, fontWeight: "700" },
   subtitle: { fontSize: 12, opacity: 0.6, marginTop: 2 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },

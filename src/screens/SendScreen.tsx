@@ -14,9 +14,10 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useRoute, type RouteProp } from "@react-navigation/native"
 import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
 import SendViewModel from "../viewmodels/SendViewModel"
+import AmountInput from "../components/AmountInput"
+import AddressDisplay from "../components/AddressDisplay"
 import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
-import { truncateAddress } from "../utils/format"
 
 type AppStackParamList = {
   Send: { chain: Chain; fromAddress: string }
@@ -41,9 +42,8 @@ function SendScreen(): JSX.Element {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Send</Text>
-        <Text style={styles.subtitle}>
-          {cfg.name} · From {truncateAddress(fromAddress)}
-        </Text>
+        <Text style={styles.subtitle}>{cfg.name}</Text>
+        <AddressDisplay label="From" address={fromAddress} />
 
         <View style={styles.field}>
           <Text style={styles.label}>Recipient address</Text>
@@ -51,22 +51,13 @@ function SendScreen(): JSX.Element {
             style={styles.input}
             value={recipient}
             onChangeText={vm.setRecipient.bind(vm)}
-            placeholder="0x..."
+            placeholder={`Recipient ${cfg.symbol} address`}
             autoCapitalize="none"
             autoCorrect={false}
           />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Amount ({cfg.symbol})</Text>
-          <TextInput
-            style={styles.input}
-            value={amount}
-            onChangeText={vm.setAmount.bind(vm)}
-            placeholder="0.0"
-            keyboardType="decimal-pad"
-          />
-        </View>
+        <AmountInput label={`Amount`} symbol={cfg.symbol} value={amount} onChange={vm.setAmount.bind(vm)} />
 
         {state.status === "loading" && (
           <View style={styles.statusBox}>
@@ -102,7 +93,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { padding: 20, gap: 14 },
   title: { fontSize: 22, fontWeight: "700" },
-  subtitle: { fontSize: 12, opacity: 0.6 },
+  subtitle: { fontSize: 14, opacity: 0.6 },
   field: { gap: 4 },
   label: { fontSize: 12, opacity: 0.7 },
   input: { padding: 12, backgroundColor: "#F2F2F7", borderRadius: 8, fontSize: 15 },
