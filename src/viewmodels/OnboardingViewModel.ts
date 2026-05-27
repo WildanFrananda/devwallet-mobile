@@ -24,7 +24,7 @@ class OnboardingViewModel extends ViewModel {
   private readonly _verifyAnswers = new StateFlow<ReadonlyArray<string>>(["", "", ""])
   private readonly _restoreInput = new StateFlow<string>("")
   private readonly _persist = new StateFlow<UiState<Account>>(UiState.idle())
-  private readonly _navigate = new EventFlow<"verify" | "done">()
+  private readonly _navigate = new EventFlow<"verify" | "createPin" | "done">()
 
   public readonly mnemonic$ = this._mnemonic.asReadOnly()
   public readonly verify$ = this._verify.asReadOnly()
@@ -101,7 +101,7 @@ class OnboardingViewModel extends ViewModel {
         const account = await this.wallet.createFromMnemonic(phrase, requireBiometric)
         if (signal.aborted) return
         this._persist.value = UiState.success(account)
-        this._navigate.emit("done")
+        this._navigate.emit("createPin")
       } catch (err) {
         if (signal.aborted) return
         this._persist.value = UiState.error(err instanceof Error ? err.message : String(err))
@@ -127,12 +127,16 @@ class OnboardingViewModel extends ViewModel {
         const account = await this.wallet.restore(phrase, requireBiometric)
         if (signal.aborted) return
         this._persist.value = UiState.success(account)
-        this._navigate.emit("done")
+        this._navigate.emit("createPin")
       } catch (err) {
         if (signal.aborted) return
         this._persist.value = UiState.error(err instanceof Error ? err.message : String(err))
       }
     })
+  }
+
+  public finishPinSetup(): void {
+    this._navigate.emit("done")
   }
 
   public reset(): void {

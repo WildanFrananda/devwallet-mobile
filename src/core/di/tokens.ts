@@ -2,9 +2,14 @@ const Tokens = {
   // Storage
   MmkvStorage: Symbol.for("MmkvStorage"),
   Keychain: Symbol.for("Keychain"),
+  Settings: Symbol.for("Settings"),
 
   // Crypto
   KeyringService: Symbol.for("KeyringService"),
+
+  // Auth
+  Pin: Symbol.for("Pin"),
+  DeviceBinding: Symbol.for("DeviceBinding"),
 
   // Lifecycle
   AutoLock: Symbol.for("AutoLock"),

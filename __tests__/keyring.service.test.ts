@@ -92,7 +92,7 @@ describe("KeyringService", () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
     const accounts = await svc.deriveEvmAll(0)
-    expect(accounts).toHaveLength(5)
+    expect(accounts).toHaveLength(3)
     accounts.forEach(a => {
       expect(a.address.toLowerCase()).toBe(EXPECTED_EVM_INDEX_0.toLowerCase())
     })
@@ -163,11 +163,11 @@ describe("KeyringService", () => {
     expect(account.path).toBe("m/44'/9004'/0'/0/0")
   })
 
-  it("deriveSupportedAll returns 10 accounts (5 EVM + BTC + SOL + Cosmos + XRPL + Stark)", async () => {
+  it("deriveSupportedAll returns 8 accounts (3 EVM + BTC + SOL + Cosmos + XRPL + Stark)", async () => {
     const svc = new KeyringService()
     svc.loadMnemonic(TEST_MNEMONIC)
     const accounts = await svc.deriveSupportedAll(0)
-    expect(accounts).toHaveLength(10)
+    expect(accounts).toHaveLength(8)
     const chains = accounts.map(a => a.chain)
     expect(chains).toContain(Chain.BITCOIN_TESTNET)
     expect(chains).toContain(Chain.SOLANA_DEVNET)

@@ -3,6 +3,8 @@ import WalletRepository from "./wallet.repository"
 import KeyringService from "../core/crypto/keyring/keyring.service"
 import KeychainService from "../core/storage/keychain.service"
 import InstallMarker from "../core/storage/install-marker"
+import PinService from "../core/auth/pin.service"
+import DeviceBindingService from "../core/auth/device-binding.service"
 import BalanceDatasource from "../datasources/balance/balance.datasource"
 import TokenDatasource from "../datasources/token/token.datasource"
 import TxHistoryDatasource from "../datasources/tx-history/tx-history.datasource"
@@ -24,7 +26,9 @@ class WalletRepositoryImpl extends WalletRepository {
     @Inject(Tokens.BalanceDatasource) private readonly balances: BalanceDatasource,
     @Inject(Tokens.TokenDatasource) private readonly tokens: TokenDatasource,
     @Inject(Tokens.TxHistoryDatasource) private readonly txHistory: TxHistoryDatasource,
-    @Inject(Tokens.SignerDatasource) private readonly signer: SignerDatasource
+    @Inject(Tokens.SignerDatasource) private readonly signer: SignerDatasource,
+    @Inject(Tokens.Pin) private readonly pin: PinService,
+    @Inject(Tokens.DeviceBinding) private readonly deviceBinding: DeviceBindingService
   ) {
     super()
   }
@@ -49,7 +53,17 @@ class WalletRepositoryImpl extends WalletRepository {
     return this.persistAndLoad(mnemonic, requireBiometric)
   }
 
-  public override async unlock(promptMessage: string = "Unlock wallet"): Promise<Account> {
+  public override async unlock(
+    method: "biometric" | "pin" = "biometric",
+    pinValue?: string,
+    promptMessage: string = "Unlock wallet"
+  ): Promise<Account> {
+    await this.deviceBinding.verify()
+    if (method === "pin") {
+      if (!pinValue) throw new Error("PIN required")
+      const ok = await this.pin.verifyPin(pinValue)
+      if (!ok) throw new Error("Incorrect PIN")
+    }
     const mnemonic = await this.keychain.getMnemonic(promptMessage)
     if (!mnemonic) {
       throw new Error("No mnemonic in keychain (or user cancelled biometric)")
@@ -112,6 +126,7 @@ class WalletRepositoryImpl extends WalletRepository {
 
   public override async clear(): Promise<void> {
     await this.keychain.clear()
+    this.deviceBinding.clear()
     this.keyring.clear()
   }
 
@@ -124,6 +139,7 @@ class WalletRepositoryImpl extends WalletRepository {
       throw new Error("Invalid mnemonic — failed BIP39 checksum")
     }
     await this.keychain.setMnemonic(mnemonic, requireBiometric)
+    await this.deviceBinding.bind()
     this.keyring.loadMnemonic(mnemonic)
     return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
   }

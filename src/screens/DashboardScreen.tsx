@@ -20,6 +20,7 @@ function DashboardScreen(): JSX.Element {
   const state = useStream(vm.portfolio$, vm.portfolio$.value)
   const tokenMap = useStream(vm.tokens$, vm.tokens$.value)
   const isRefreshing = useStream(vm.isRefreshing$, vm.isRefreshing$.value)
+  const totalUsd = useStream(vm.totalUsd$, vm.totalUsd$.value)
   const [selectorOpen, setSelectorOpen] = useState<boolean>(false)
   const [chainFilter, setChainFilter] = useState<Chain | "all">("all")
 
@@ -66,6 +67,15 @@ function DashboardScreen(): JSX.Element {
           <Text style={styles.networkBtnText}>{selectorLabel} ▾</Text>
         </Pressable>
       </View>
+
+      {totalUsd !== null && (
+        <View style={styles.totalBox}>
+          <Text style={styles.totalAmount}>
+            ${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </Text>
+          <Text style={styles.totalLabel}>TESTNET — not real value</Text>
+        </View>
+      )}
 
       {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
 
@@ -124,6 +134,9 @@ const styles = StyleSheet.create({
   },
   networkBtnText: { fontSize: 13, fontWeight: "500" },
   list: { padding: 20, gap: 10 },
+  totalBox: { alignItems: "center", paddingHorizontal: 20, paddingBottom: 8 },
+  totalAmount: { fontSize: 32, fontWeight: "700" },
+  totalLabel: { fontSize: 11, color: "#B27800", fontWeight: "600", marginTop: 2, letterSpacing: 0.5 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   error: { color: "#B00020", paddingHorizontal: 20, paddingVertical: 8, textAlign: "center" },
   empty: { textAlign: "center", opacity: 0.5, marginTop: 32 }

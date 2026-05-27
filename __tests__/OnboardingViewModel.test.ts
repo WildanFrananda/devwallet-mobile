@@ -7,8 +7,35 @@ import BalanceDatasource from "../src/datasources/balance/balance.datasource"
 import TokenDatasource from "../src/datasources/token/token.datasource"
 import TxHistoryDatasource from "../src/datasources/tx-history/tx-history.datasource"
 import SignerDatasource from "../src/datasources/signer/signer.datasource"
+import PinService from "../src/core/auth/pin.service"
+import DeviceBindingService from "../src/core/auth/device-binding.service"
+
+jest.mock("react-native-device-info", () => ({
+  __esModule: true,
+  default: { getUniqueId: jest.fn().mockResolvedValue("test-device-id") }
+}))
 
 const keychainState: { mnemonic: string | null } = { mnemonic: null }
+const mmkvState: Record<string, unknown> = { "devwallet.installed": true }
+
+jest.mock("react-native-mmkv", () => ({
+  createMMKV: () => ({
+    getBoolean: (k: string) => mmkvState[k] as boolean | undefined,
+    getNumber: (k: string) => mmkvState[k] as number | undefined,
+    getString: (k: string) => mmkvState[k] as string | undefined,
+    set: (k: string, v: unknown) => {
+      mmkvState[k] = v
+    },
+    remove: (k: string) => {
+      delete mmkvState[k]
+    }
+  })
+}))
+
+jest.mock("react-native-quick-crypto", () => ({
+  pbkdf2Sync: jest.fn(() => Buffer.alloc(32, 1)),
+  randomBytes: jest.fn(() => Buffer.alloc(32, 2))
+}))
 
 jest.mock("react-native-keychain", () => ({
   ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: "x" },
@@ -34,7 +61,9 @@ function makeVm(): OnboardingViewModel {
     new BalanceDatasource(),
     new TokenDatasource(),
     new TxHistoryDatasource(),
-    new SignerDatasource()
+    new SignerDatasource(),
+    new PinService(),
+    new DeviceBindingService()
   )
   return new OnboardingViewModel(wallet)
 }

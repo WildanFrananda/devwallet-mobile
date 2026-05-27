@@ -24,6 +24,7 @@
         "react-native": "0.85.3",
         "react-native-biometrics": "^3.0.1",
         "react-native-config": "^1.6.1",
+        "react-native-device-info": "^15.0.2",
         "react-native-gesture-handler": "^2.31.2",
         "react-native-get-random-values": "^2.0.0",
         "react-native-keychain": "^10.0.0",
@@ -1628,6 +1629,8 @@
     "react-native-biometrics": ["react-native-biometrics@3.0.1", "", { "peerDependencies": { "react-native": ">=0.60.0" } }, "sha512-Ru80gXRa9KG04sl5AB9HyjLjVbduhqZVjA+AiOSGqr+fNqCDmCu9y5WEksnjbnniNLmq1yGcw+qcLXmR1ddLDQ=="],
 
     "react-native-config": ["react-native-config@1.6.1", "", { "peerDependencies": { "react": "*", "react-native": "*", "react-native-windows": ">=0.61" }, "optionalPeers": ["react-native-windows"] }, "sha512-HvKtxr6/Tq3iMdFx5REYZsjCtPi0RxQOMCs15+DqrUPTNFtWHuEuh+zw7fJp+dmuO79YMfdtlsPWIGTHtaXwjg=="],
+
+    "react-native-device-info": ["react-native-device-info@15.0.2", "", { "peerDependencies": { "react-native": "*" } }, "sha512-dd71eXG2l3Cwp66IvKNadMTB8fhU3PEjyVddI97sYan+D4bgIAUmgGDhbSOFvHcGavksb2U17kiQYaDiK2WK2g=="],
 
     "react-native-gesture-handler": ["react-native-gesture-handler@2.31.2", "", { "dependencies": { "@egjs/hammerjs": "^2.0.17", "@types/react-test-renderer": "^19.1.0", "hoist-non-react-statics": "^3.3.0", "invariant": "^2.2.4" }, "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-rw5q74i2AfS7YGYdbxQDhOU7xqgY6WRM1132/CCm3erqjblhECZDZFHIm0tteHoC9ih24wogVBVVzcTBQtZ+5A=="],
 

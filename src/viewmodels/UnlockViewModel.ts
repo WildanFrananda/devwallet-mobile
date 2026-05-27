@@ -16,10 +16,18 @@ class UnlockViewModel extends ViewModel {
   }
 
   public unlock(promptMessage: string = "Unlock DevWallet"): void {
+    this.runUnlock("biometric", undefined, promptMessage)
+  }
+
+  public unlockWithPin(pin: string): void {
+    this.runUnlock("pin", pin)
+  }
+
+  private runUnlock(method: "biometric" | "pin", pinValue?: string, promptMessage?: string): void {
     this._state.value = UiState.loading()
     void this.launch(async signal => {
       try {
-        const account = await this.wallet.unlock(promptMessage)
+        const account = await this.wallet.unlock(method, pinValue, promptMessage)
         if (signal.aborted) return
         this._state.value = UiState.success(account)
         this._unlocked.emit(account)

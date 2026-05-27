@@ -3,6 +3,7 @@ import { StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import { takeUntil } from "rxjs"
 import WalletRepository from "../repositories/wallet.repository"
 import AutoLockService from "../core/lifecycle/auto-lock.service"
+import SettingsService from "../core/storage/settings.service"
 import { Tokens } from "../core/di/tokens"
 
 type AppRoute = "onboarding" | "unlock" | "app"
@@ -14,7 +15,8 @@ class RootViewModel extends ViewModel {
 
   public constructor(
     @Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository,
-    @Inject(Tokens.AutoLock) private readonly autoLock: AutoLockService
+    @Inject(Tokens.AutoLock) private readonly autoLock: AutoLockService,
+    @Inject(Tokens.Settings) private readonly settings: SettingsService
   ) {
     super()
   }
@@ -25,7 +27,7 @@ class RootViewModel extends ViewModel {
    * navigator back to UnlockScreen.
    */
   public bootstrap(thresholdMs?: number): void {
-    this.autoLock.start(thresholdMs)
+    this.autoLock.start(thresholdMs ?? this.settings.getAutoLockMs())
     this.autoLock.locked$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this._route.value = UiState.success("unlock")
     })

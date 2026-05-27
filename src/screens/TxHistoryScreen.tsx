@@ -26,9 +26,20 @@ function TxHistoryScreen(): JSX.Element {
   const route = useRoute<RouteProp<AppStackParamList, "TxHistory">>()
   const { chain, address } = route.params
   const state = useStream(vm.state$, vm.state$.value)
+  const items = useStream(vm.filteredItems$, vm.filteredItems$.value)
+  const hasMore = useStream(vm.hasMore$, vm.hasMore$.value)
+  const loadingMore = useStream(vm.loadingMore$, vm.loadingMore$.value)
+  const filter = useStream(vm.filter$, vm.filter$.value)
   const cfg = NetworkRegistry.get(chain)
 
   useInit(() => vm.load(chain, address))
+
+  const filters: ReadonlyArray<{ key: typeof filter; label: string }> = [
+    { key: "all", label: "All" },
+    { key: "pending", label: "Pending" },
+    { key: "success", label: "Success" },
+    { key: "failed", label: "Failed" }
+  ]
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -60,33 +71,53 @@ function TxHistoryScreen(): JSX.Element {
       )}
 
       {state.status === "success" && (
-        <FlatList
-          contentContainerStyle={styles.list}
-          data={state.data}
-          keyExtractor={tx => tx.hash}
-          ListEmptyComponent={<Text style={styles.empty}>No transactions yet</Text>}
-          renderItem={({ item }) => {
-            const outgoing = item.isOutgoingFor(address)
-            return (
-              <Pressable style={styles.row} onPress={() => nav.navigate("TxDetail", { tx: item, chain })}>
-                <View style={styles.rowLeft}>
-                  <Text style={[styles.direction, outgoing ? styles.out : styles.in]}>
-                    {outgoing ? "OUT" : "IN"}
-                  </Text>
-                  <Text style={styles.counterparty}>{truncateAddress(item.counterpartyFor(address))}</Text>
-                  <Text style={styles.timestamp}>{formatRelativeTime(item.timestamp)}</Text>
-                </View>
-                <View style={styles.rowRight}>
-                  <Text style={styles.amount}>
-                    {outgoing ? "-" : "+"}
-                    {formatNativeAmount(item.value, cfg.decimals, cfg.symbol)}
-                  </Text>
-                  <Text style={item.status === "failed" ? styles.failed : styles.statusOk}>{item.status}</Text>
-                </View>
+        <>
+          <View style={styles.filterRow}>
+            {filters.map(f => (
+              <Pressable
+                key={f.key}
+                style={[styles.chip, filter === f.key && styles.chipActive]}
+                onPress={() => vm.setFilter(f.key)}
+              >
+                <Text style={[styles.chipLabel, filter === f.key && styles.chipLabelActive]}>{f.label}</Text>
               </Pressable>
-            )
-          }}
-        />
+            ))}
+          </View>
+          <FlatList
+            contentContainerStyle={styles.list}
+            data={items}
+            keyExtractor={tx => tx.hash}
+            ListEmptyComponent={<Text style={styles.empty}>No transactions yet</Text>}
+            ListFooterComponent={
+              hasMore ? (
+                <Pressable style={styles.loadMore} onPress={() => vm.loadMore()} disabled={loadingMore}>
+                  {loadingMore ? <ActivityIndicator /> : <Text style={styles.loadMoreLabel}>Load more</Text>}
+                </Pressable>
+              ) : null
+            }
+            renderItem={({ item }) => {
+              const outgoing = item.isOutgoingFor(address)
+              return (
+                <Pressable style={styles.row} onPress={() => nav.navigate("TxDetail", { tx: item, chain })}>
+                  <View style={styles.rowLeft}>
+                    <Text style={[styles.direction, outgoing ? styles.out : styles.in]}>
+                      {outgoing ? "OUT" : "IN"}
+                    </Text>
+                    <Text style={styles.counterparty}>{truncateAddress(item.counterpartyFor(address))}</Text>
+                    <Text style={styles.timestamp}>{formatRelativeTime(item.timestamp)}</Text>
+                  </View>
+                  <View style={styles.rowRight}>
+                    <Text style={styles.amount}>
+                      {outgoing ? "-" : "+"}
+                      {formatNativeAmount(item.value, cfg.decimals, cfg.symbol)}
+                    </Text>
+                    <Text style={item.status === "failed" ? styles.failed : styles.statusOk}>{item.status}</Text>
+                  </View>
+                </Pressable>
+              )
+            }}
+          />
+        </>
       )}
     </SafeAreaView>
   )
@@ -101,6 +132,13 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "700" },
   subtitle: { fontSize: 12, opacity: 0.6, marginTop: 2 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  filterRow: { flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingBottom: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: "#F2F2F7" },
+  chipActive: { backgroundColor: "#007AFF" },
+  chipLabel: { fontSize: 12, fontWeight: "500", color: "#333" },
+  chipLabelActive: { color: "#FFFFFF" },
+  loadMore: { padding: 12, alignItems: "center" },
+  loadMoreLabel: { color: "#007AFF", fontWeight: "600" },
   list: { padding: 20, gap: 8 },
   row: {
     flexDirection: "row",

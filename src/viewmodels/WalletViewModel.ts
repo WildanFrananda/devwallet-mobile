@@ -1,11 +1,18 @@
 import { Inject, Injectable } from "react-native-mobile-mvvm/di"
-import { StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
+import {
+  ComputedStateFlow,
+  StateFlow,
+  UiState,
+  ViewModel,
+  type ReadOnlyStateFlow
+} from "react-native-mobile-mvvm"
 import { interval, takeUntil } from "rxjs"
 import WalletRepository from "../repositories/wallet.repository"
 import { Tokens } from "../core/di/tokens"
 import Portfolio from "../models/portfolio.model"
 import Token from "../models/token.model"
 import { Chain } from "../core/constants/chains.enum"
+import { PriceRegistry } from "../core/constants/prices"
 
 type TokenMap = Readonly<Record<string, ReadonlyArray<Token>>>
 
@@ -19,6 +26,27 @@ class WalletViewModel extends ViewModel {
   public readonly portfolio$ = this._portfolio.asReadOnly()
   public readonly tokens$ = this._tokens.asReadOnly()
   public readonly isRefreshing$ = this._isRefreshing.asReadOnly()
+
+  /**
+   * Sum of native USD value across all chain entries that resolved
+   * successfully. Failed chains are skipped — they don't zero out the
+   * total. Phase 1 uses hardcoded rates from `PriceRegistry`.
+   */
+  public readonly totalUsd$: ReadOnlyStateFlow<number | null> = ComputedStateFlow.from(
+    [this._portfolio],
+    ([state]) => {
+      if (state.status !== "success") return null
+      let total = 0
+      for (const entry of state.data.entries) {
+        const balance = entry.balance
+        if (!balance) continue
+        const native = Number(balance.raw) / 10 ** balance.decimals
+        const price = PriceRegistry.native(balance.chain)
+        total += native * price
+      }
+      return total
+    }
+  )
 
   private autoRefreshOn: boolean = false
   private lastAddressIndex: number = 0

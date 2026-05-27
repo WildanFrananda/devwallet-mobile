@@ -5,10 +5,17 @@ const SERVICE_NAME = "com.devwallet.mnemonic"
 const USERNAME = "primary"
 
 /**
- * Wraps react-native-keychain to persist the BIP39 mnemonic in the secure
- * enclave / keystore. Reads require biometric unlock (Face ID / Touch ID /
- * Android fingerprint). Phase 1 stores the raw mnemonic — Phase 2 may swap
- * to an encrypted blob keyed by a session passphrase.
+ * Wraps react-native-keychain to persist the BIP39 mnemonic. Two storage
+ * modes:
+ *
+ *  - `requireBiometric = true` → adds `BIOMETRY_ANY_OR_DEVICE_PASSCODE`
+ *    access control. Reads trigger Face ID / Touch ID / device passcode.
+ *  - `requireBiometric = false` → accessibility-only
+ *    (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`). Reads succeed silently — the
+ *    app-layer PIN gate enforces auth.
+ *
+ * Phase 1 stores the raw mnemonic; Phase 2 may swap to an encrypted blob
+ * keyed by a session passphrase.
  */
 @Injectable()
 class KeychainService {
@@ -38,6 +45,19 @@ class KeychainService {
     })
     if (result === false) return null
     return result.password
+  }
+
+  /**
+   * Re-store the mnemonic with a different `requireBiometric` flag. Used by
+   * Settings when the user toggles the biometric switch — the mnemonic
+   * blob doesn't change, only the keychain access-control attribute.
+   */
+  public async setBiometricRequired(requireBiometric: boolean, promptMessage?: string): Promise<void> {
+    const mnemonic = await this.getMnemonic(promptMessage ?? "Authenticate to change security settings")
+    if (mnemonic === null) {
+      throw new Error("Cannot read mnemonic — biometric cancelled or not stored")
+    }
+    await this.setMnemonic(mnemonic, requireBiometric)
   }
 
   public async clear(): Promise<void> {

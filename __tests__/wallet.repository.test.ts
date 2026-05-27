@@ -6,12 +6,39 @@ import BalanceDatasource from "../src/datasources/balance/balance.datasource"
 import TokenDatasource from "../src/datasources/token/token.datasource"
 import TxHistoryDatasource from "../src/datasources/tx-history/tx-history.datasource"
 import SignerDatasource from "../src/datasources/signer/signer.datasource"
+import PinService from "../src/core/auth/pin.service"
+import DeviceBindingService from "../src/core/auth/device-binding.service"
 import { Chain } from "../src/core/constants/chains.enum"
+
+jest.mock("react-native-device-info", () => ({
+  __esModule: true,
+  default: { getUniqueId: jest.fn().mockResolvedValue("test-device-id") }
+}))
 
 const TEST_MNEMONIC = "test test test test test test test test test test test junk"
 const EXPECTED_EVM_0 = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
 
 const keychainState: { mnemonic: string | null } = { mnemonic: null }
+const mmkvState: Record<string, unknown> = {}
+
+jest.mock("react-native-mmkv", () => ({
+  createMMKV: () => ({
+    getBoolean: (key: string) => mmkvState[key] as boolean | undefined,
+    getNumber: (key: string) => mmkvState[key] as number | undefined,
+    getString: (key: string) => mmkvState[key] as string | undefined,
+    set: (key: string, value: unknown) => {
+      mmkvState[key] = value
+    },
+    remove: (key: string) => {
+      delete mmkvState[key]
+    }
+  })
+}))
+
+jest.mock("react-native-quick-crypto", () => ({
+  pbkdf2Sync: jest.fn(() => Buffer.alloc(32, 1)),
+  randomBytes: jest.fn(() => Buffer.alloc(32, 2))
+}))
 
 jest.mock("react-native-keychain", () => ({
   ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: "WHEN_UNLOCKED_THIS_DEVICE_ONLY" },
@@ -37,18 +64,31 @@ function makeRepo(): WalletRepositoryImpl {
     new BalanceDatasource(),
     new TokenDatasource(),
     new TxHistoryDatasource(),
-    new SignerDatasource()
+    new SignerDatasource(),
+    new PinService(),
+    new DeviceBindingService()
   )
 }
 
 describe("WalletRepository", () => {
   beforeEach(() => {
     keychainState.mnemonic = null
+    Object.keys(mmkvState).forEach(k => delete mmkvState[k])
+    mmkvState["devwallet.installed"] = true
   })
 
   it("hasWallet returns false initially", async () => {
     const repo = makeRepo()
     await expect(repo.hasWallet()).resolves.toBe(false)
+  })
+
+  it("hasWallet wipes keychain on fresh install (MMKV flag absent)", async () => {
+    const repo = makeRepo()
+    keychainState.mnemonic = "leftover from prior install"
+    delete mmkvState["devwallet.installed"]
+    await expect(repo.hasWallet()).resolves.toBe(false)
+    expect(keychainState.mnemonic).toBe(null)
+    expect(mmkvState["devwallet.installed"]).toBe(true)
   })
 
   it("createFromMnemonic persists + unlocks + returns primary EVM account", async () => {
@@ -73,7 +113,7 @@ describe("WalletRepository", () => {
     const fresh = makeRepo()
     expect(fresh.isUnlocked()).toBe(false)
 
-    const account = await fresh.unlock("Test prompt")
+    const account = await fresh.unlock("biometric", undefined, "Test prompt")
     expect(account.address.toLowerCase()).toBe(EXPECTED_EVM_0)
     expect(fresh.isUnlocked()).toBe(true)
   })
@@ -83,11 +123,11 @@ describe("WalletRepository", () => {
     await expect(repo.getCurrent()).rejects.toThrow("Keyring locked")
   })
 
-  it("deriveAll returns 10 accounts after unlock", async () => {
+  it("deriveAll returns 8 accounts after unlock", async () => {
     const repo = makeRepo()
     await repo.createFromMnemonic(TEST_MNEMONIC, false)
     const accounts = await repo.deriveAll(0)
-    expect(accounts).toHaveLength(10)
+    expect(accounts).toHaveLength(8)
   })
 
   it("clear wipes keychain + keyring", async () => {

@@ -19,8 +19,16 @@ abstract class WalletRepository {
   /** Restore wallet from a user-supplied mnemonic. */
   public abstract restore(mnemonic: string, requireBiometric?: boolean): Promise<Account>
 
-  /** Read mnemonic from keychain (biometric prompt) and load keyring. */
-  public abstract unlock(promptMessage?: string): Promise<Account>
+  /**
+   * Read mnemonic from keychain and load keyring.
+   *
+   * `method = "biometric"` triggers the Face ID / Touch ID prompt (default).
+   * `method = "pin"` requires `pinValue` and runs through `PinService.verifyPin`
+   * before the keychain read. The keychain itself must already be stored
+   * with `requireBiometric = false` for the PIN path, otherwise the read
+   * will still prompt biometric.
+   */
+  public abstract unlock(method?: "biometric" | "pin", pinValue?: string, promptMessage?: string): Promise<Account>
 
   /** Returns the primary EVM Sepolia account when keyring is unlocked. */
   public abstract getCurrent(): Promise<Account>

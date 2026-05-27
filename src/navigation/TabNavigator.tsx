@@ -2,12 +2,14 @@ import { type JSX } from "react"
 import { Text, View, StyleSheet } from "react-native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import DashboardScreen from "../screens/DashboardScreen"
+import SettingsScreen from "../screens/SettingsScreen"
 
 type TabParamList = {
   Wallet: undefined
   Faucet: undefined
   RpcInspector: undefined
   Webhook: undefined
+  Settings: undefined
 }
 
 const Tab = createBottomTabNavigator<TabParamList>()
@@ -27,6 +29,7 @@ function TabNavigator(): JSX.Element {
       <Tab.Screen name="Faucet">{() => <PlaceholderScreen label="Faucet" />}</Tab.Screen>
       <Tab.Screen name="RpcInspector">{() => <PlaceholderScreen label="RPC Inspector" />}</Tab.Screen>
       <Tab.Screen name="Webhook">{() => <PlaceholderScreen label="Webhook" />}</Tab.Screen>
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   )
 }

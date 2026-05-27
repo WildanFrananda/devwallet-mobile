@@ -1,14 +1,28 @@
 import { type JSX } from "react"
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useScopedViewModel, useStream } from "react-native-mobile-mvvm"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { useScopedViewModel, useStream, useEvent } from "react-native-mobile-mvvm"
 import OnboardingViewModel from "../viewmodels/OnboardingViewModel"
+
+type OnboardingNav = NativeStackNavigationProp<{
+  GenerateWallet: undefined
+  RestoreWallet: undefined
+  VerifyMnemonic: undefined
+  CreatePin: undefined
+}>
 
 function VerifyMnemonicScreen(): JSX.Element {
   const vm = useScopedViewModel(OnboardingViewModel)
+  const nav = useNavigation<OnboardingNav>()
   const challenge = useStream(vm.verify$, vm.verify$.value)
   const answers = useStream(vm.verifyAnswers$, vm.verifyAnswers$.value)
   const persist = useStream(vm.persist$, vm.persist$.value)
+
+  useEvent(vm.navigate$, event => {
+    if (event === "createPin") nav.navigate("CreatePin")
+  })
 
   if (!challenge) {
     return (

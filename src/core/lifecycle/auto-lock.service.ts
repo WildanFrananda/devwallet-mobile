@@ -28,6 +28,12 @@ class AutoLockService {
     this.subscription = AppState.addEventListener("change", this.onChange)
   }
 
+  /** Update the background-threshold without re-subscribing. Pass a negative
+   * value to disable auto-lock entirely ("Never"). */
+  public setLockAfter(thresholdMs: number): void {
+    this.thresholdMs = thresholdMs
+  }
+
   public stop(): void {
     this.subscription?.remove()
     this.subscription = null
@@ -49,6 +55,7 @@ class AutoLockService {
     if (state === "active") {
       const bg = this.lastBackgroundAt
       this.lastBackgroundAt = null
+      if (this.thresholdMs < 0) return
       if (bg !== null && Date.now() - bg >= this.thresholdMs && this.keyring.isUnlocked()) {
         this.keyring.clear()
         this._locked.emit()

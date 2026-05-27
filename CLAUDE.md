@@ -37,6 +37,14 @@ src/
 
 No `features/<name>/` nesting. Type-based flat layer-grouping — matches PRD §6.2. Files inside flat folders use feature-name prefix (`WalletViewModel.ts`, `FaucetViewModel.ts`). Promote to `features/` only when feature count > 15.
 
+## Decisions
+
+- **Chain scope (Phase 1):** 8 chains — Sepolia, Polygon Amoy, Base Sepolia (EVM); Bitcoin Testnet4; Solana Devnet; Cosmos Theta; XRPL Testnet; StarkNet Sepolia. Holesky dropped (Ethereum Foundation deprecated late 2025; Hoodi is the planned successor). Bitcoin Signet dropped (Testnet4 sufficient for MVP). Anvil local dropped (dev-only, not in MVP scope). Consider Hoodi as 2nd EVM testnet post-MVP.
+
+## Known deviations
+
+- **NetworkSelector uses RN `Modal`, not `@gorhom/bottom-sheet`.** PRD §5.1 calls for bottom-sheet UX, but Phase 1 keeps the RN Modal to ship on time. UX-level deviation, no functional impact. Revisit during Phase 2 polish.
+
 ## Conventions
 
 - Conventional Commits required (commitlint enforced)
@@ -45,6 +53,10 @@ No `features/<name>/` nesting. Type-based flat layer-grouping — matches PRD §
 - DI bootstrap in `App.tsx` via `configureDI()` before any render.
 - `import "reflect-metadata"` must be the first line of `App.tsx`.
 - Private key NEVER leaves the device. All signing on-device, full stop.
+
+## Related docs
+
+- [docs/crypto-polyfill-decisions.md](docs/crypto-polyfill-decisions.md) — Phase 1 polyfill stack + load-order rules + lib swap rationale + issue log.
 
 ## Forbidden
 

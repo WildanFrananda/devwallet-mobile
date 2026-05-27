@@ -28,9 +28,11 @@ function SendScreen(): JSX.Element {
   const route = useRoute<RouteProp<AppStackParamList, "Send">>()
   const { chain, fromAddress } = route.params
   const recipient = useStream(vm.recipient$, vm.recipient$.value)
+  const recipientError = useStream(vm.recipientError$, vm.recipientError$.value)
   const amount = useStream(vm.amount$, vm.amount$.value)
   const state = useStream(vm.state$, vm.state$.value)
   const canSubmit = useStream(vm.canSubmit$, vm.canSubmit$.value)
+  const maxLoading = useStream(vm.maxLoading$, vm.maxLoading$.value)
   const cfg = NetworkRegistry.get(chain)
 
   useInit(() => vm.bind(chain, fromAddress))
@@ -48,16 +50,24 @@ function SendScreen(): JSX.Element {
         <View style={styles.field}>
           <Text style={styles.label}>Recipient address</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, recipientError && styles.inputError]}
             value={recipient}
             onChangeText={vm.setRecipient.bind(vm)}
             placeholder={`Recipient ${cfg.symbol} address`}
             autoCapitalize="none"
             autoCorrect={false}
           />
+          {recipientError && <Text style={styles.fieldError}>{recipientError}</Text>}
         </View>
 
-        <AmountInput label={`Amount`} symbol={cfg.symbol} value={amount} onChange={vm.setAmount.bind(vm)} />
+        <AmountInput
+          label="Amount"
+          symbol={cfg.symbol}
+          value={amount}
+          onChange={vm.setAmount.bind(vm)}
+          onMaxPress={() => vm.setMaxAmount()}
+          maxLoading={maxLoading}
+        />
 
         {state.status === "loading" && (
           <View style={styles.statusBox}>
@@ -97,6 +107,8 @@ const styles = StyleSheet.create({
   field: { gap: 4 },
   label: { fontSize: 12, opacity: 0.7 },
   input: { padding: 12, backgroundColor: "#F2F2F7", borderRadius: 8, fontSize: 15 },
+  inputError: { borderWidth: 1, borderColor: "#B00020" },
+  fieldError: { color: "#B00020", fontSize: 12 },
   body: { fontSize: 12, opacity: 0.7 },
   statusBox: { flexDirection: "row", alignItems: "center", gap: 10 },
   error: { color: "#B00020", fontSize: 13 },

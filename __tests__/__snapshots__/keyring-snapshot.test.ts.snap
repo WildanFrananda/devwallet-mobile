@@ -9,22 +9,12 @@ exports[`KeyringService snapshot derives a stable address set from the BIP44 tes
   },
   {
     "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "chain": "evm:holesky",
-    "path": "m/44'/60'/0'/0/0",
-  },
-  {
-    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "chain": "evm:polygon-amoy",
     "path": "m/44'/60'/0'/0/0",
   },
   {
     "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "chain": "evm:base-sepolia",
-    "path": "m/44'/60'/0'/0/0",
-  },
-  {
-    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "chain": "evm:local",
     "path": "m/44'/60'/0'/0/0",
   },
   {
