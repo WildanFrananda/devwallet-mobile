@@ -10,6 +10,10 @@ const Tokens = {
   // Auth
   Pin: Symbol.for("Pin"),
   DeviceBinding: Symbol.for("DeviceBinding"),
+  DeviceFingerprint: Symbol.for("DeviceFingerprint"),
+
+  // Notifications
+  Push: Symbol.for("Push"),
 
   // Lifecycle
   AutoLock: Symbol.for("AutoLock"),
@@ -30,6 +34,7 @@ const Tokens = {
   TokenDatasource: Symbol.for("TokenDatasource"),
   TxHistoryDatasource: Symbol.for("TxHistoryDatasource"),
   SignerDatasource: Symbol.for("SignerDatasource"),
+  FaucetDatasource: Symbol.for("FaucetDatasource"),
 
   // Repositories (per feature)
   OnboardingRepository: Symbol.for("OnboardingRepository"),

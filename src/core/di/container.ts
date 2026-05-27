@@ -11,6 +11,10 @@ import TxHistoryDatasource from "../../datasources/tx-history/tx-history.datasou
 import SignerDatasource from "../../datasources/signer/signer.datasource"
 import PinService from "../auth/pin.service"
 import DeviceBindingService from "../auth/device-binding.service"
+import DeviceFingerprintService from "../auth/device-fingerprint.service"
+import PushService from "../notifications/push.service"
+import FaucetDatasource from "../../datasources/faucet/faucet.datasource"
+import FaucetRepositoryImpl from "../../repositories/faucet.repository.impl"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -24,12 +28,16 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.Settings, SettingsService)
       getContainer.registerSingleton(Tokens.Pin, PinService)
       getContainer.registerSingleton(Tokens.DeviceBinding, DeviceBindingService)
+      getContainer.registerSingleton(Tokens.DeviceFingerprint, DeviceFingerprintService)
+      getContainer.registerSingleton(Tokens.Push, PushService)
       getContainer.registerSingleton(Tokens.BalanceDatasource, BalanceDatasource)
       getContainer.registerSingleton(Tokens.TokenDatasource, TokenDatasource)
       getContainer.registerSingleton(Tokens.TxHistoryDatasource, TxHistoryDatasource)
       getContainer.registerSingleton(Tokens.SignerDatasource, SignerDatasource)
       getContainer.registerSingleton(Tokens.WalletRepository, WalletRepositoryImpl)
       getContainer.registerSingleton(Tokens.AutoLock, AutoLockService)
+      getContainer.registerSingleton(Tokens.FaucetDatasource, FaucetDatasource)
+      getContainer.registerSingleton(Tokens.FaucetRepository, FaucetRepositoryImpl)
     })
     DIContainer.configured = true
   }
