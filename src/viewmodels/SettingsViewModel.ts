@@ -65,6 +65,11 @@ class SettingsViewModel extends ViewModel {
   public resetChangePin(): void {
     this._changePin.value = UiState.idle()
   }
+
+  /** Manual logout — wipes in-memory keyring + emits locked$ → RootNav routes to UnlockScreen. */
+  public lockNow(): void {
+    this.autoLock.lockNow()
+  }
 }
 
 export default SettingsViewModel

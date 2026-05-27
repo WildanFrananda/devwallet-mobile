@@ -1,11 +1,12 @@
 import { type JSX } from "react"
 import { Text, View, StyleSheet } from "react-native"
-import { createNativeStackNavigator } from "@react-navigation/native-stack"
+import { createNativeStackNavigator, type NativeStackScreenProps } from "@react-navigation/native-stack"
 import TabNavigator from "./TabNavigator"
 import TxHistoryScreen from "../screens/TxHistoryScreen"
 import TxDetailScreen from "../screens/TxDetailScreen"
 import SendScreen from "../screens/SendScreen"
 import ReceiveScreen from "../screens/ReceiveScreen"
+import ChangePinScreen from "../screens/ChangePinScreen"
 import type Transaction from "../models/transaction.model"
 import { Chain } from "../core/constants/chains.enum"
 
@@ -15,6 +16,7 @@ type AppStackParamList = {
   TxDetail: { tx: Transaction; chain: Chain }
   Send: { chain: Chain; fromAddress: string }
   Receive: { chain: Chain; address: string }
+  ChangePin: undefined
   ContractTerminal: undefined
   TxReplay: undefined
   GasOracle: undefined
@@ -38,6 +40,12 @@ function AppNavigator(): JSX.Element {
       <Stack.Screen name="TxDetail" component={TxDetailScreen} />
       <Stack.Screen name="Send" component={SendScreen} />
       <Stack.Screen name="Receive" component={ReceiveScreen} />
+      <Stack.Screen name="ChangePin">
+        {(props: NativeStackScreenProps<AppStackParamList, "ChangePin">) => {
+          const back = (): void => props.navigation.goBack()
+          return <ChangePinScreen onDone={back} onCancel={back} />
+        }}
+      </Stack.Screen>
       <Stack.Screen name="ContractTerminal">{() => <PlaceholderScreen label="Contract Terminal" />}</Stack.Screen>
       <Stack.Screen name="TxReplay">{() => <PlaceholderScreen label="Tx Replay" />}</Stack.Screen>
       <Stack.Screen name="GasOracle">{() => <PlaceholderScreen label="Gas Oracle" />}</Stack.Screen>

@@ -8,6 +8,7 @@ import {
 } from "react-native-mobile-mvvm"
 import { parseEther } from "viem"
 import WalletRepository from "../repositories/wallet.repository"
+import FeeDatasource from "../datasources/fee/fee.datasource"
 import { Tokens } from "../core/di/tokens"
 import SendDraft from "../models/send-draft.model"
 import Transaction from "../models/transaction.model"
@@ -53,7 +54,10 @@ class SendViewModel extends ViewModel {
     }
   )
 
-  public constructor(@Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository) {
+  public constructor(
+    @Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository,
+    @Inject(Tokens.FeeDatasource) private readonly fees: FeeDatasource
+  ) {
     super()
   }
 
@@ -127,8 +131,9 @@ class SendViewModel extends ViewModel {
           this._state.value = UiState.error("Could not read current balance for Max")
           return
         }
-        const feeBuffer = SendViewModel.feeBufferFor(chain, balance.decimals)
-        const max = balance.raw > feeBuffer ? balance.raw - feeBuffer : 0n
+        const liveFee = await this.fees.estimateNativeFee(chain).catch(() => 0n)
+        const buffer = liveFee > 0n ? liveFee : SendViewModel.feeBufferFor(chain)
+        const max = balance.raw > buffer ? balance.raw - buffer : 0n
         this._amount.value = SendViewModel.formatUnits(max, balance.decimals)
       } catch (err) {
         if (signal.aborted) return
@@ -146,13 +151,10 @@ class SendViewModel extends ViewModel {
   }
 
   /**
-   * Rough native-fee buffer per chain so Max doesn't broadcast a zero-fee
-   * tx. EVM: 21000 gas × 2 gwei. Bitcoin: 2000 sats. SOL: 5000 lamports.
-   * Cosmos/XRPL: small flat. Conservative — real fee may be less; user
-   * can edit downward.
+   * Fallback fee buffer used only when the live estimator fails. Per-chain
+   * conservative values; real fee usually less. User can edit Max downward.
    */
-  private static feeBufferFor(chain: Chain, decimals: number): bigint {
-    void decimals
+  private static feeBufferFor(chain: Chain): bigint {
     switch (chain) {
       case Chain.EVM_SEPOLIA:
       case Chain.EVM_POLYGON_AMOY:

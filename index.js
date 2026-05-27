@@ -20,6 +20,20 @@ install()
 
 require("reflect-metadata")
 
+// Firebase background message handler MUST be registered before the app
+// component is mounted, and at module scope so the headless JS runtime
+// keeps it in scope when the OS wakes the app for a background push.
+const messaging = require("@react-native-firebase/messaging").default
+messaging().setBackgroundMessageHandler(remoteMessage => {
+  // Backend NotificationService payloads carry `data.type` like
+  // "faucet.success" / "faucet.failed". The OS already renders the
+  // notification tray entry; we use this handler purely for any side
+  // effect (e.g. analytics) that needs to run while the app is
+  // backgrounded. Keep it lightweight.
+  console.log("[push] background message", remoteMessage?.data?.type ?? "unknown")
+  return Promise.resolve()
+})
+
 const { AppRegistry } = require("react-native")
 const App = require("./App").default
 const { name: appName } = require("./app.json")

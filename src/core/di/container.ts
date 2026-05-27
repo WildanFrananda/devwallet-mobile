@@ -12,9 +12,11 @@ import SignerDatasource from "../../datasources/signer/signer.datasource"
 import PinService from "../auth/pin.service"
 import DeviceBindingService from "../auth/device-binding.service"
 import DeviceFingerprintService from "../auth/device-fingerprint.service"
+import SecureStorageService from "../auth/secure-storage.service"
 import PushService from "../notifications/push.service"
 import FaucetDatasource from "../../datasources/faucet/faucet.datasource"
 import FaucetRepositoryImpl from "../../repositories/faucet.repository.impl"
+import FeeDatasource from "../../datasources/fee/fee.datasource"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -29,6 +31,7 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.Pin, PinService)
       getContainer.registerSingleton(Tokens.DeviceBinding, DeviceBindingService)
       getContainer.registerSingleton(Tokens.DeviceFingerprint, DeviceFingerprintService)
+      getContainer.registerSingleton(Tokens.SecureStorage, SecureStorageService)
       getContainer.registerSingleton(Tokens.Push, PushService)
       getContainer.registerSingleton(Tokens.BalanceDatasource, BalanceDatasource)
       getContainer.registerSingleton(Tokens.TokenDatasource, TokenDatasource)
@@ -38,6 +41,7 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.AutoLock, AutoLockService)
       getContainer.registerSingleton(Tokens.FaucetDatasource, FaucetDatasource)
       getContainer.registerSingleton(Tokens.FaucetRepository, FaucetRepositoryImpl)
+      getContainer.registerSingleton(Tokens.FeeDatasource, FeeDatasource)
     })
     DIContainer.configured = true
   }
