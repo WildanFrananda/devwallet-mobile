@@ -33,7 +33,6 @@ describe("Bip44Paths", () => {
   it("builds Ethereum BIP44 path for EVM chains", () => {
     expect(Bip44Paths.path(Chain.EVM_SEPOLIA, 0)).toBe("m/44'/60'/0'/0/0")
     expect(Bip44Paths.path(Chain.EVM_SEPOLIA, 5)).toBe("m/44'/60'/0'/0/5")
-    expect(Bip44Paths.path(Chain.EVM_HOLESKY, 0)).toBe("m/44'/60'/0'/0/0")
     expect(Bip44Paths.path(Chain.EVM_POLYGON_AMOY, 0)).toBe("m/44'/60'/0'/0/0")
     expect(Bip44Paths.path(Chain.EVM_BASE_SEPOLIA, 0)).toBe("m/44'/60'/0'/0/0")
   })

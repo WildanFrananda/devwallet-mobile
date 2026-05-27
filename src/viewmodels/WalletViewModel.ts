@@ -15,8 +15,10 @@ const AUTO_REFRESH_MS = 30_000
 class WalletViewModel extends ViewModel {
   private readonly _portfolio = new StateFlow<UiState<Portfolio>>(UiState.idle())
   private readonly _tokens = new StateFlow<TokenMap>({})
+  private readonly _isRefreshing = new StateFlow<boolean>(false)
   public readonly portfolio$ = this._portfolio.asReadOnly()
   public readonly tokens$ = this._tokens.asReadOnly()
+  public readonly isRefreshing$ = this._isRefreshing.asReadOnly()
 
   private autoRefreshOn: boolean = false
   private lastAddressIndex: number = 0
@@ -25,17 +27,51 @@ class WalletViewModel extends ViewModel {
     super()
   }
 
+  /**
+   * Initial fetch — flips state to loading so the screen can show a full-
+   * page spinner while there's no data yet. Use `refreshPortfolio()` for
+   * subsequent updates so the UI stays painted with the previous values
+   * until the new fetch returns.
+   */
   public loadPortfolio(addressIndex: number = 0): void {
     this.lastAddressIndex = addressIndex
-    this._portfolio.value = UiState.loading()
-    void this.launch(async signal => {
+    if (this._portfolio.value.status !== "success") {
+      this._portfolio.value = UiState.loading()
+    } else {
+      this._isRefreshing.value = true
+    }
+    void this.runFetch(addressIndex)
+  }
+
+  /**
+   * Silent background refresh — never flips portfolio$ to loading. Replaces
+   * the success payload only when the new fetch resolves successfully so
+   * the list keeps rendering current values during network roundtrips.
+   */
+  public refreshPortfolio(addressIndex: number = this.lastAddressIndex): void {
+    this.lastAddressIndex = addressIndex
+    if (this._isRefreshing.value) return
+    this._isRefreshing.value = true
+    void this.runFetch(addressIndex)
+  }
+
+  private async runFetch(addressIndex: number): Promise<void> {
+    await this.launch(async signal => {
       try {
         const portfolio = await this.wallet.loadPortfolio(addressIndex)
         if (signal.aborted) return
         this._portfolio.value = UiState.success(portfolio)
       } catch (err) {
         if (signal.aborted) return
-        this._portfolio.value = UiState.error(err instanceof Error ? err.message : String(err))
+        if (this._portfolio.value.status !== "success") {
+          this._portfolio.value = UiState.error(err instanceof Error ? err.message : String(err))
+        }
+        // On silent refresh failure we keep the last successful data —
+        // a transient RPC blip shouldn't blank the dashboard.
+      } finally {
+        if (!signal.aborted) {
+          this._isRefreshing.value = false
+        }
       }
     })
   }
@@ -54,8 +90,8 @@ class WalletViewModel extends ViewModel {
   }
 
   /**
-   * Start a 30s polling loop that re-runs `loadPortfolio` at the last
-   * address index. Safe to call multiple times — subsequent calls are
+   * Start a polling loop that runs `refreshPortfolio()` (silent) every
+   * `intervalMs`. Safe to call multiple times — subsequent calls are
    * no-ops. Auto-cancelled by `takeUntil(destroy$)` on VM clear.
    */
   public startAutoRefresh(intervalMs: number = AUTO_REFRESH_MS): void {
@@ -63,12 +99,13 @@ class WalletViewModel extends ViewModel {
     this.autoRefreshOn = true
     interval(intervalMs)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.loadPortfolio(this.lastAddressIndex))
+      .subscribe(() => this.refreshPortfolio(this.lastAddressIndex))
   }
 
   public reset(): void {
     this._portfolio.value = UiState.idle()
     this._tokens.value = {}
+    this._isRefreshing.value = false
   }
 }
 

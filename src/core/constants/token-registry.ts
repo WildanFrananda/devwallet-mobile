@@ -19,9 +19,6 @@ class TokenRegistry {
       { symbol: "USDC", contractAddress: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", decimals: 6 },
       { symbol: "WETH", contractAddress: "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", decimals: 18 }
     ],
-    [Chain.EVM_HOLESKY]: [
-      { symbol: "LINK", contractAddress: "0x685cE6742351ae9b618F383883D6d1e0c5A31B4B", decimals: 18 }
-    ],
     [Chain.EVM_POLYGON_AMOY]: [
       { symbol: "USDC", contractAddress: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582", decimals: 6 }
     ],

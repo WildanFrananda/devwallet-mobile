@@ -34,10 +34,8 @@ class KeyringService {
 
   private static readonly SUPPORTED_CHAINS: ReadonlyArray<Chain> = [
     Chain.EVM_SEPOLIA,
-    Chain.EVM_HOLESKY,
     Chain.EVM_POLYGON_AMOY,
     Chain.EVM_BASE_SEPOLIA,
-    Chain.EVM_LOCAL,
     Chain.BITCOIN_TESTNET,
     Chain.SOLANA_DEVNET,
     Chain.COSMOS_THETA,

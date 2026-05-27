@@ -9,7 +9,6 @@ import { Chain } from "./chains.enum"
 class TxHistoryEndpoints {
   private static readonly map: Partial<Record<Chain, string>> = {
     [Chain.EVM_SEPOLIA]: "https://eth-sepolia.blockscout.com/api",
-    [Chain.EVM_HOLESKY]: "https://eth-holesky.blockscout.com/api",
     [Chain.EVM_POLYGON_AMOY]: "https://amoy.polygonscan.com/api",
     [Chain.EVM_BASE_SEPOLIA]: "https://base-sepolia.blockscout.com/api"
   }

@@ -1,6 +1,6 @@
 import { useCallback, useState, type JSX } from "react"
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, ActivityIndicator } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
@@ -16,8 +16,10 @@ type AppNav = NativeStackNavigationProp<AppStackParamList>
 function DashboardScreen(): JSX.Element {
   const vm = useViewModel(WalletViewModel)
   const nav = useNavigation<AppNav>()
+  const insets = useSafeAreaInsets()
   const state = useStream(vm.portfolio$, vm.portfolio$.value)
   const tokenMap = useStream(vm.tokens$, vm.tokens$.value)
+  const isRefreshing = useStream(vm.isRefreshing$, vm.isRefreshing$.value)
   const [selectorOpen, setSelectorOpen] = useState<boolean>(false)
   const [chainFilter, setChainFilter] = useState<Chain | "all">("all")
 
@@ -27,14 +29,15 @@ function DashboardScreen(): JSX.Element {
   })
 
   // Refresh whenever Wallet tab regains focus (e.g. after Faucet roundtrip).
+  // Silent — keep the rendered list painted while the new fetch resolves.
   useFocusEffect(
     useCallback(() => {
-      vm.loadPortfolio(0)
+      vm.refreshPortfolio(0)
     }, [vm])
   )
 
   function onRefresh(): void {
-    vm.loadPortfolio(0)
+    vm.refreshPortfolio(0)
   }
 
   function onEntryRendered(chain: Chain, address: string): void {
@@ -44,7 +47,6 @@ function DashboardScreen(): JSX.Element {
     }
   }
 
-  const isLoading = state.status === "loading"
   const portfolio = state.status === "success" ? state.data : null
   const errorMessage = state.status === "error" ? state.message : null
 
@@ -57,7 +59,7 @@ function DashboardScreen(): JSX.Element {
   const selectorLabel = chainFilter === "all" ? "All networks" : NetworkRegistry.get(chainFilter).name
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.headerBar}>
         <Text style={styles.title}>Portfolio</Text>
         <Pressable style={styles.networkBtn} onPress={() => setSelectorOpen(true)}>
@@ -67,14 +69,14 @@ function DashboardScreen(): JSX.Element {
 
       {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
 
-      {isLoading && portfolio === null ? (
+      {portfolio === null && errorMessage === null ? (
         <View style={styles.center}>
           <ActivityIndicator />
         </View>
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} />}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
         >
           {entries.map(e => {
             onEntryRendered(e.account.chain, e.account.address)
@@ -82,13 +84,13 @@ function DashboardScreen(): JSX.Element {
               <BalanceCard
                 key={e.account.chain}
                 entry={e}
-                loading={isLoading}
+                loading={false}
                 tokens={tokenMap[e.account.chain]}
                 onPress={() => nav.navigate("TxHistory", { chain: e.account.chain, address: e.account.address })}
               />
             )
           })}
-          {entries.length === 0 && !isLoading && (
+          {portfolio !== null && entries.length === 0 && (
             <Text style={styles.empty}>No entries{chainFilter === "all" ? "" : " for selected network"}</Text>
           )}
         </ScrollView>
@@ -100,7 +102,7 @@ function DashboardScreen(): JSX.Element {
         onSelect={setChainFilter}
         onClose={() => setSelectorOpen(false)}
       />
-    </SafeAreaView>
+    </View>
   )
 }
 

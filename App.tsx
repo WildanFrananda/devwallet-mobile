@@ -1,6 +1,6 @@
 import React from "react"
 import { StatusBar, StyleSheet, useColorScheme } from "react-native"
-import { SafeAreaProvider } from "react-native-safe-area-context"
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context"
 import { NavigationContainer } from "@react-navigation/native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import DIContainer from "./src/core/di/container"
@@ -13,7 +13,7 @@ function App() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
         <NavigationContainer>
           <RootNavigator />

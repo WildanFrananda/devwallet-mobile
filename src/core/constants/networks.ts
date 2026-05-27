@@ -17,17 +17,9 @@ class NetworkRegistry {
       name: "Sepolia",
       symbol: "ETH",
       decimals: 18,
-      rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
+      // publicnode 403s some User-Agents — 1rpc.io is the more permissive fallback.
+      rpcUrl: "https://1rpc.io/sepolia",
       explorerUrl: "https://sepolia.etherscan.io",
-      faucetUrl: null
-    },
-    [Chain.EVM_HOLESKY]: {
-      chain: Chain.EVM_HOLESKY,
-      name: "Holesky",
-      symbol: "ETH",
-      decimals: 18,
-      rpcUrl: "https://ethereum-holesky-rpc.publicnode.com",
-      explorerUrl: "https://holesky.etherscan.io",
       faucetUrl: null
     },
     [Chain.EVM_POLYGON_AMOY]: {
@@ -48,22 +40,15 @@ class NetworkRegistry {
       explorerUrl: "https://sepolia.basescan.org",
       faucetUrl: null
     },
-    [Chain.EVM_LOCAL]: {
-      chain: Chain.EVM_LOCAL,
-      name: "Anvil local",
-      symbol: "ETH",
-      decimals: 18,
-      rpcUrl: "http://127.0.0.1:8545",
-      explorerUrl: null,
-      faucetUrl: null
-    },
     [Chain.BITCOIN_TESTNET]: {
       chain: Chain.BITCOIN_TESTNET,
       name: "Bitcoin testnet",
       symbol: "tBTC",
       decimals: 8,
-      rpcUrl: "https://blockstream.info/testnet/api",
-      explorerUrl: "https://blockstream.info/testnet",
+      // mempool.space is faster + more permissive than Blockstream for the
+      // address/utxo/tx endpoints we use.
+      rpcUrl: "https://mempool.space/testnet/api",
+      explorerUrl: "https://mempool.space/testnet",
       faucetUrl: null
     },
     [Chain.SOLANA_DEVNET]: {
@@ -80,7 +65,9 @@ class NetworkRegistry {
       name: "Cosmos theta",
       symbol: "ATOM",
       decimals: 6,
-      rpcUrl: "https://rpc.sentry-02.theta-testnet.polypore.xyz",
+      // theta-testnet endpoints flaky / partially sunset. Provider testnet
+      // (sentry-01.ics-testnet) is more stable for Cosmos Hub-style chains.
+      rpcUrl: "https://rpc.provider-sentry-01.ics-testnet.polypore.xyz",
       explorerUrl: null,
       faucetUrl: null
     },

@@ -7,6 +7,7 @@ import EvmBalanceFetcher from "./evm.balance-fetcher"
 import SolanaBalanceFetcher from "./solana.balance-fetcher"
 import BitcoinBalanceFetcher from "./bitcoin.balance-fetcher"
 import XrplBalanceFetcher from "./xrpl.balance-fetcher"
+import CosmosBalanceFetcher from "./cosmos.balance-fetcher"
 
 type FetchResult = {
   account: Account
@@ -17,8 +18,8 @@ type FetchResult = {
 /**
  * Strategy-pattern dispatcher: holds a list of per-chain balance fetchers
  * and runs them in parallel against the given account set. Chains without
- * a registered fetcher (Cosmos, StarkNet in Phase 1) get a graceful
- * `unsupported` error instead of throwing.
+ * a registered fetcher (StarkNet — account contract deploy is Phase 2)
+ * get a graceful per-entry error instead of throwing.
  */
 @Injectable()
 class BalanceDatasource {
@@ -26,7 +27,8 @@ class BalanceDatasource {
     new EvmBalanceFetcher(),
     new SolanaBalanceFetcher(),
     new BitcoinBalanceFetcher(),
-    new XrplBalanceFetcher()
+    new XrplBalanceFetcher(),
+    new CosmosBalanceFetcher()
   ]
 
   public async fetchOne(chain: Chain, address: string): Promise<Balance> {

@@ -76,6 +76,7 @@
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-test-renderer": "^19.1.0",
+    "babel-plugin-transform-typescript-metadata": "^0.4.0",
     "eslint": "^9.18.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-native": "^5.0.0",

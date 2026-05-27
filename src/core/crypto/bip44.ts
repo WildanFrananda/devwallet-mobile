@@ -18,10 +18,8 @@ type Purpose = 44 | 49 | 84 | 86
 class Bip44Paths {
   private static readonly coinTypes: Record<Chain, number> = {
     [Chain.EVM_SEPOLIA]: 60,
-    [Chain.EVM_HOLESKY]: 60,
     [Chain.EVM_POLYGON_AMOY]: 60,
     [Chain.EVM_BASE_SEPOLIA]: 60,
-    [Chain.EVM_LOCAL]: 60,
     [Chain.BITCOIN_TESTNET]: 1,
     [Chain.SOLANA_DEVNET]: 501,
     [Chain.COSMOS_THETA]: 118,

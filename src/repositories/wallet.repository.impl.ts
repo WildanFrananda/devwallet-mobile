@@ -2,6 +2,7 @@ import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import WalletRepository from "./wallet.repository"
 import KeyringService from "../core/crypto/keyring/keyring.service"
 import KeychainService from "../core/storage/keychain.service"
+import InstallMarker from "../core/storage/install-marker"
 import BalanceDatasource from "../datasources/balance/balance.datasource"
 import TokenDatasource from "../datasources/token/token.datasource"
 import TxHistoryDatasource from "../datasources/tx-history/tx-history.datasource"
@@ -28,7 +29,12 @@ class WalletRepositoryImpl extends WalletRepository {
     super()
   }
 
-  public override hasWallet(): Promise<boolean> {
+  public override async hasWallet(): Promise<boolean> {
+    if (InstallMarker.isFreshInstall()) {
+      await this.keychain.clear()
+      InstallMarker.mark()
+      return false
+    }
     return this.keychain.hasMnemonic()
   }
 

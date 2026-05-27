@@ -7,10 +7,8 @@ import type { ChainBalanceFetcher } from "./chain-balance-fetcher.interface"
 class EvmBalanceFetcher implements ChainBalanceFetcher {
   private static readonly EVM_CHAINS: ReadonlyArray<Chain> = [
     Chain.EVM_SEPOLIA,
-    Chain.EVM_HOLESKY,
     Chain.EVM_POLYGON_AMOY,
-    Chain.EVM_BASE_SEPOLIA,
-    Chain.EVM_LOCAL
+    Chain.EVM_BASE_SEPOLIA
   ]
 
   public supports(chain: Chain): boolean {
