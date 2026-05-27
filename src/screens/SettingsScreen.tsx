@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import DeviceInfo from "react-native-device-info"
+import Config from "react-native-config"
 import { useViewModel, useStream } from "react-native-mobile-mvvm"
 import SettingsViewModel from "../viewmodels/SettingsViewModel"
 import { AUTO_LOCK_CHOICES } from "../core/storage/settings.service"
@@ -77,6 +78,10 @@ function SettingsScreen(): JSX.Element {
           <View style={styles.row}>
             <Text style={styles.rowLabel}>React Native</Text>
             <Text style={styles.rowValue}>0.85.3</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>Commit</Text>
+            <Text style={styles.rowValue}>{Config.GIT_COMMIT || "dev"}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Phase</Text>

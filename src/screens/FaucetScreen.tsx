@@ -1,4 +1,4 @@
-import { type JSX } from "react"
+import { useEffect, useState, type JSX } from "react"
 import {
   View,
   Text,
@@ -15,6 +15,26 @@ import FaucetViewModel from "../viewmodels/FaucetViewModel"
 import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
 import { truncateAddress } from "../utils/format"
+
+/** Ticks every `intervalMs` so rate-limit countdowns re-render live. */
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState<number>(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs)
+    return () => clearInterval(id)
+  }, [intervalMs])
+  return now
+}
+
+function formatCountdown(ms: number): string {
+  const secs = Math.max(0, Math.ceil(ms / 1000))
+  const h = Math.floor(secs / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  const s = secs % 60
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+}
 
 const ROW_ORDER: ReadonlyArray<Chain> = [
   Chain.EVM_SEPOLIA,
@@ -48,6 +68,7 @@ function FaucetScreen(): JSX.Element {
   const vm = useViewModel(FaucetViewModel)
   const rows = useStream(vm.rows$, vm.rows$.value)
   const addresses = useStream(vm.addresses$, vm.addresses$.value)
+  const now = useNow(1000)
 
   useInit(() => vm.initialize(0))
 
@@ -116,6 +137,12 @@ function FaucetScreen(): JSX.Element {
                   <Text style={styles.errorLine}>{row.errorMessage}</Text>
                 )}
 
+                {row?.rateLimitedUntilMs && row.rateLimitedUntilMs > now && (
+                  <Text style={styles.countdownLine}>
+                    Try again in {formatCountdown(row.rateLimitedUntilMs - now)}
+                  </Text>
+                )}
+
                 {row?.manualUrl && (
                   <Pressable
                     style={styles.openFaucetBtn}
@@ -125,13 +152,20 @@ function FaucetScreen(): JSX.Element {
                   </Pressable>
                 )}
 
-                {(status === "idle" || status === "failed" || status === "completed") && address && (
-                  <Pressable style={styles.retryBtn} onPress={() => vm.requestSingle(chain)}>
-                    <Text style={styles.retryBtnText}>
-                      {status === "completed" ? "Request again" : status === "failed" ? "Retry" : "Request"}
-                    </Text>
-                  </Pressable>
-                )}
+                {(status === "idle" || status === "failed" || status === "completed") && address && (() => {
+                  const stillLimited = !!(row?.rateLimitedUntilMs && row.rateLimitedUntilMs > now)
+                  return (
+                    <Pressable
+                      style={[styles.retryBtn, stillLimited && styles.retryBtnDisabled]}
+                      onPress={() => vm.requestSingle(chain)}
+                      disabled={stillLimited}
+                    >
+                      <Text style={styles.retryBtnText}>
+                        {status === "completed" ? "Request again" : status === "failed" ? "Retry" : "Request"}
+                      </Text>
+                    </Pressable>
+                  )
+                })()}
               </View>
             )
           })}
@@ -176,6 +210,7 @@ const styles = StyleSheet.create({
   amountLine: { fontSize: 14, fontWeight: "600", color: "#0A7" },
   txLink: { fontSize: 11, color: "#0066CC", fontFamily: "Courier" },
   errorLine: { fontSize: 12, color: "#B00020" },
+  countdownLine: { fontSize: 11, color: "#B27800", fontWeight: "600" },
   openFaucetBtn: {
     backgroundColor: "#EEF6FB",
     paddingVertical: 8,
@@ -191,6 +226,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center"
   },
+  retryBtnDisabled: { opacity: 0.4 },
   retryBtnText: { fontSize: 13, fontWeight: "500" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   error: { color: "#B00020", paddingHorizontal: 20, paddingVertical: 8, textAlign: "center" }
