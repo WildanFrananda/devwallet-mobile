@@ -24,7 +24,13 @@ class EvmSigner implements ChainSigner {
     const walletClient = createWalletClient({ account, transport })
     const publicClient = createPublicClient({ transport })
 
-    const fees = await publicClient.estimateFeesPerGas()
+    // Prefer the user's Gas Oracle tier when set; otherwise fall back to
+    // viem's per-call estimate.
+    const maxFeePerGas =
+      draft.gasOverride?.maxFeePerGas ?? (await publicClient.estimateFeesPerGas()).maxFeePerGas
+    const maxPriorityFeePerGas =
+      draft.gasOverride?.maxPriorityFeePerGas ??
+      (await publicClient.estimateFeesPerGas()).maxPriorityFeePerGas
     const nonce = await publicClient.getTransactionCount({ address: account.address, blockTag: "pending" })
 
     const rawTx = await account.signTransaction({
@@ -32,8 +38,8 @@ class EvmSigner implements ChainSigner {
       value: draft.amount,
       nonce,
       gas: 21000n,
-      maxFeePerGas: fees.maxFeePerGas,
-      maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
       type: "eip1559",
       chainId: await publicClient.getChainId()
     })

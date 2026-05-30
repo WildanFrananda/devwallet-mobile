@@ -5,6 +5,7 @@ import KeychainService from "../core/storage/keychain.service"
 import InstallMarker from "../core/storage/install-marker"
 import PinService from "../core/auth/pin.service"
 import DeviceBindingService from "../core/auth/device-binding.service"
+import SecureStorageService from "../core/auth/secure-storage.service"
 import BalanceDatasource from "../datasources/balance/balance.datasource"
 import TokenDatasource from "../datasources/token/token.datasource"
 import TxHistoryDatasource from "../datasources/tx-history/tx-history.datasource"
@@ -28,7 +29,8 @@ class WalletRepositoryImpl extends WalletRepository {
     @Inject(Tokens.TxHistoryDatasource) private readonly txHistory: TxHistoryDatasource,
     @Inject(Tokens.SignerDatasource) private readonly signer: SignerDatasource,
     @Inject(Tokens.Pin) private readonly pin: PinService,
-    @Inject(Tokens.DeviceBinding) private readonly deviceBinding: DeviceBindingService
+    @Inject(Tokens.DeviceBinding) private readonly deviceBinding: DeviceBindingService,
+    @Inject(Tokens.SecureStorage) private readonly secureStorage: SecureStorageService
   ) {
     super()
   }
@@ -42,15 +44,29 @@ class WalletRepositoryImpl extends WalletRepository {
     return this.keychain.hasMnemonic()
   }
 
-  public override async createFromMnemonic(mnemonic: string, requireBiometric: boolean = true): Promise<Account> {
-    return this.persistAndLoad(mnemonic, requireBiometric)
-  }
-
-  public override async restore(mnemonic: string, requireBiometric: boolean = true): Promise<Account> {
+  public override async createFromMnemonic(mnemonic: string): Promise<Account> {
     if (!Bip39.validate(mnemonic)) {
       throw new Error("Invalid mnemonic — failed BIP39 checksum")
     }
-    return this.persistAndLoad(mnemonic, requireBiometric)
+    this.keyring.loadMnemonic(mnemonic)
+    return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
+  }
+
+  public override async restore(mnemonic: string): Promise<Account> {
+    return this.createFromMnemonic(mnemonic)
+  }
+
+  public override async persistEncrypted(pin: string): Promise<void> {
+    if (!this.keyring.isUnlocked()) {
+      throw new Error("Keyring locked — load mnemonic before persistEncrypted()")
+    }
+    const mnemonic = this.keyring.getMnemonic()
+    const blob = this.secureStorage.encrypt(mnemonic, pin)
+    // Write WITHOUT biometric ACL — the mnemonic row is already encrypted at
+    // the app layer. Biometric protects the cached PIN row instead.
+    await this.keychain.setMnemonic(blob, false)
+    await this.keychain.setCachedPin(pin)
+    await this.deviceBinding.bind()
   }
 
   public override async unlock(
@@ -59,17 +75,42 @@ class WalletRepositoryImpl extends WalletRepository {
     promptMessage: string = "Unlock wallet"
   ): Promise<Account> {
     await this.deviceBinding.verify()
+    const pin = await this.resolvePin(method, pinValue, promptMessage)
+    const blob = await this.keychain.getMnemonic(promptMessage)
+    if (!blob) {
+      throw new Error("No mnemonic in keychain (or user cancelled biometric)")
+    }
+    const mnemonic = this.decryptOrPassthrough(blob, pin)
+    this.keyring.loadMnemonic(mnemonic)
+    return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
+  }
+
+  /**
+   * Pre-Phase-3 wallets stored the raw mnemonic in the keychain — those
+   * rows fall through `isEncryptedBlob === false` and we return the value
+   * unchanged. The migration service rewraps them on the next boot.
+   */
+  private decryptOrPassthrough(blob: string, pin: string): string {
+    if (!this.secureStorage.isEncryptedBlob(blob)) return blob
+    return this.secureStorage.decrypt(blob, pin)
+  }
+
+  private async resolvePin(
+    method: "biometric" | "pin",
+    pinValue: string | undefined,
+    promptMessage: string
+  ): Promise<string> {
     if (method === "pin") {
       if (!pinValue) throw new Error("PIN required")
       const ok = await this.pin.verifyPin(pinValue)
       if (!ok) throw new Error("Incorrect PIN")
+      return pinValue
     }
-    const mnemonic = await this.keychain.getMnemonic(promptMessage)
-    if (!mnemonic) {
-      throw new Error("No mnemonic in keychain (or user cancelled biometric)")
+    const cached = await this.keychain.getCachedPin(promptMessage)
+    if (!cached) {
+      throw new Error("Biometric PIN cache empty — set PIN first or unlock with PIN")
     }
-    this.keyring.loadMnemonic(mnemonic)
-    return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
+    return cached
   }
 
   public override async getCurrent(): Promise<Account> {
@@ -134,15 +175,6 @@ class WalletRepositoryImpl extends WalletRepository {
     return this.keyring.isUnlocked()
   }
 
-  private async persistAndLoad(mnemonic: string, requireBiometric: boolean): Promise<Account> {
-    if (!Bip39.validate(mnemonic)) {
-      throw new Error("Invalid mnemonic — failed BIP39 checksum")
-    }
-    await this.keychain.setMnemonic(mnemonic, requireBiometric)
-    await this.deviceBinding.bind()
-    this.keyring.loadMnemonic(mnemonic)
-    return this.keyring.deriveAccount(Chain.EVM_SEPOLIA, 0)
-  }
 }
 
 export default WalletRepositoryImpl

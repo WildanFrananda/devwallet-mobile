@@ -9,6 +9,7 @@ import TxHistoryDatasource from "../src/datasources/tx-history/tx-history.dataso
 import SignerDatasource from "../src/datasources/signer/signer.datasource"
 import PinService from "../src/core/auth/pin.service"
 import DeviceBindingService from "../src/core/auth/device-binding.service"
+import SecureStorageService from "../src/core/auth/secure-storage.service"
 
 jest.mock("react-native-device-info", () => ({
   __esModule: true,
@@ -63,7 +64,8 @@ function makeVm(): OnboardingViewModel {
     new TxHistoryDatasource(),
     new SignerDatasource(),
     new PinService(),
-    new DeviceBindingService()
+    new DeviceBindingService(),
+    new SecureStorageService()
   )
   return new OnboardingViewModel(wallet)
 }
@@ -113,7 +115,7 @@ describe("OnboardingViewModel", () => {
     if (!c) return
 
     c.expected.forEach((w, i) => vm.setVerifyAnswer(i, w))
-    vm.submitVerify(false)
+    vm.submitVerify()
     expect(vm.persist$.value.status).toBe("loading")
 
     for (let i = 0; i < 50; i++) {
@@ -130,7 +132,7 @@ describe("OnboardingViewModel", () => {
     vm.setVerifyAnswer(0, "wrong")
     vm.setVerifyAnswer(1, "wrong")
     vm.setVerifyAnswer(2, "wrong")
-    vm.submitVerify(false)
+    vm.submitVerify()
     const state = vm.persist$.value
     expect(state.status).toBe("error")
     if (state.status === "error") {
@@ -142,7 +144,7 @@ describe("OnboardingViewModel", () => {
     const vm = makeVm()
     const TEST = "test test test test test test test test test test test junk"
     vm.setRestoreInput(TEST)
-    vm.submitRestore(false)
+    vm.submitRestore()
     expect(vm.persist$.value.status).toBe("loading")
     for (let i = 0; i < 50; i++) {
       if (vm.persist$.value.status !== "loading") break
@@ -154,7 +156,7 @@ describe("OnboardingViewModel", () => {
   it("submitRestore rejects wrong word count", () => {
     const vm = makeVm()
     vm.setRestoreInput("only three words")
-    vm.submitRestore(false)
+    vm.submitRestore()
     const state = vm.persist$.value
     expect(state.status).toBe("error")
     if (state.status === "error") {
@@ -165,7 +167,7 @@ describe("OnboardingViewModel", () => {
   it("submitRestore rejects invalid checksum", async () => {
     const vm = makeVm()
     vm.setRestoreInput("test test test test test test test test test test test test")
-    vm.submitRestore(false)
+    vm.submitRestore()
     for (let i = 0; i < 50; i++) {
       if (vm.persist$.value.status !== "loading") break
       await new Promise<void>(resolve => setTimeout(() => resolve(), 50))

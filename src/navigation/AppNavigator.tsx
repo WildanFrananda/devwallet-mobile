@@ -7,6 +7,8 @@ import TxDetailScreen from "../screens/TxDetailScreen"
 import SendScreen from "../screens/SendScreen"
 import ReceiveScreen from "../screens/ReceiveScreen"
 import ChangePinScreen from "../screens/ChangePinScreen"
+import ContractTerminalScreen from "../screens/ContractTerminalScreen"
+import GasOracleScreen from "../screens/GasOracleScreen"
 import type Transaction from "../models/transaction.model"
 import { Chain } from "../core/constants/chains.enum"
 
@@ -46,9 +48,9 @@ function AppNavigator(): JSX.Element {
           return <ChangePinScreen onDone={back} onCancel={back} />
         }}
       </Stack.Screen>
-      <Stack.Screen name="ContractTerminal">{() => <PlaceholderScreen label="Contract Terminal" />}</Stack.Screen>
+      <Stack.Screen name="ContractTerminal" component={ContractTerminalScreen} />
       <Stack.Screen name="TxReplay">{() => <PlaceholderScreen label="Tx Replay" />}</Stack.Screen>
-      <Stack.Screen name="GasOracle">{() => <PlaceholderScreen label="Gas Oracle" />}</Stack.Screen>
+      <Stack.Screen name="GasOracle" component={GasOracleScreen} />
     </Stack.Navigator>
   )
 }

@@ -66,7 +66,7 @@ function VerifyMnemonicScreen(): JSX.Element {
           </View>
         )}
 
-        <Button title="Verify" onPress={() => vm.submitVerify(false)} disabled={persist.status === "loading"} />
+        <Button title="Verify" onPress={() => vm.submitVerify()} disabled={persist.status === "loading"} />
       </ScrollView>
     </SafeAreaView>
   )

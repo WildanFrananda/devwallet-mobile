@@ -1,6 +1,7 @@
 import { createPublicClient, http, type Address } from "viem"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { loggingTransport } from "../../core/network/logging-transport"
 import Balance from "../../models/balance.model"
 import type { ChainBalanceFetcher } from "./chain-balance-fetcher.interface"
 
@@ -17,7 +18,9 @@ class EvmBalanceFetcher implements ChainBalanceFetcher {
 
   public async fetch(chain: Chain, address: string): Promise<Balance> {
     const cfg = NetworkRegistry.get(chain)
-    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+    const client = createPublicClient({
+      transport: loggingTransport(http(cfg.rpcUrl), chain, cfg.rpcUrl)
+    })
     const raw = await client.getBalance({ address: address as Address })
     return new Balance({
       chain,

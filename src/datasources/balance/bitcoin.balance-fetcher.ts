@@ -1,5 +1,6 @@
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { fetchAndLog } from "../../core/network/logging-transport"
 import Balance from "../../models/balance.model"
 import type { ChainBalanceFetcher } from "./chain-balance-fetcher.interface"
 
@@ -16,11 +17,13 @@ class BitcoinBalanceFetcher implements ChainBalanceFetcher {
   public async fetch(chain: Chain, address: string): Promise<Balance> {
     const cfg = NetworkRegistry.get(chain)
     const url = `${cfg.rpcUrl}/address/${address}`
-    const res = await fetch(url)
-    if (!res.ok) {
-      throw new Error(`Blockstream ${res.status}: ${await res.text()}`)
-    }
-    const stats = (await res.json()) as BlockstreamAddressStats
+    const stats = await fetchAndLog<BlockstreamAddressStats>({
+      chain,
+      endpoint: cfg.rpcUrl,
+      method: "GET /address/{address}",
+      params: { address },
+      fetcher: () => fetch(url)
+    })
     const confirmed = stats.chain_stats.funded_txo_sum - stats.chain_stats.spent_txo_sum
     const mempool = stats.mempool_stats.funded_txo_sum - stats.mempool_stats.spent_txo_sum
     const sats = BigInt(confirmed + mempool)

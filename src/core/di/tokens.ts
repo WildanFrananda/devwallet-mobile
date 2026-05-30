@@ -12,6 +12,7 @@ const Tokens = {
   DeviceBinding: Symbol.for("DeviceBinding"),
   DeviceFingerprint: Symbol.for("DeviceFingerprint"),
   SecureStorage: Symbol.for("SecureStorage"),
+  V03EncryptMigration: Symbol.for("V03EncryptMigration"),
 
   // Notifications
   Push: Symbol.for("Push"),
@@ -37,6 +38,8 @@ const Tokens = {
   SignerDatasource: Symbol.for("SignerDatasource"),
   FaucetDatasource: Symbol.for("FaucetDatasource"),
   FeeDatasource: Symbol.for("FeeDatasource"),
+  ContractCallerDatasource: Symbol.for("ContractCallerDatasource"),
+  GasOracleDatasource: Symbol.for("GasOracleDatasource"),
 
   // Repositories (per feature)
   OnboardingRepository: Symbol.for("OnboardingRepository"),

@@ -9,8 +9,10 @@ import {
 import { parseEther } from "viem"
 import WalletRepository from "../repositories/wallet.repository"
 import FeeDatasource from "../datasources/fee/fee.datasource"
+import GasRepository from "../repositories/gas.repository"
+import type { GasTier } from "../datasources/gas/gas-oracle.datasource"
 import { Tokens } from "../core/di/tokens"
-import SendDraft from "../models/send-draft.model"
+import SendDraft, { type GasOverride } from "../models/send-draft.model"
 import Transaction from "../models/transaction.model"
 import { Chain } from "../core/constants/chains.enum"
 import { AddressValidator } from "../core/crypto/validators"
@@ -54,11 +56,44 @@ class SendViewModel extends ViewModel {
     }
   )
 
+  private readonly _gasTiers = new StateFlow<ReadonlyArray<GasTier>>([])
+  private readonly _selectedTier = new StateFlow<GasTier["label"] | null>(null)
+  public readonly gasTiers$ = this._gasTiers.asReadOnly()
+  public readonly selectedTier$ = this._selectedTier.asReadOnly()
+
   public constructor(
     @Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository,
-    @Inject(Tokens.FeeDatasource) private readonly fees: FeeDatasource
+    @Inject(Tokens.FeeDatasource) private readonly fees: FeeDatasource,
+    @Inject(Tokens.GasRepository) private readonly gas: GasRepository
   ) {
     super()
+  }
+
+  public setSelectedTier(label: GasTier["label"]): void {
+    this._selectedTier.value = label
+  }
+
+  public loadGasTiers(): void {
+    const chain = this._chain.value
+    if (chain === null) return
+    if (
+      chain !== Chain.EVM_SEPOLIA &&
+      chain !== Chain.EVM_POLYGON_AMOY &&
+      chain !== Chain.EVM_BASE_SEPOLIA
+    ) {
+      this._gasTiers.value = []
+      return
+    }
+    void this.launch(async signal => {
+      try {
+        const snap = await this.gas.fetchOracle(chain)
+        if (signal.aborted || this._chain.value !== chain) return
+        this._gasTiers.value = snap.tiers
+        if (this._selectedTier.value === null) this._selectedTier.value = "standard"
+      } catch {
+        // Non-fatal — Send screen will just fall back to viem's per-call estimate.
+      }
+    })
   }
 
   /** Called once from the screen `useInit` with route params. */
@@ -95,7 +130,8 @@ class SendViewModel extends ViewModel {
       chain,
       fromAddress,
       toAddress: this._recipient.value.trim(),
-      amount: raw
+      amount: raw,
+      gasOverride: this.resolveGasOverride()
     })
 
     this._state.value = UiState.loading()
@@ -148,6 +184,17 @@ class SendViewModel extends ViewModel {
     this._recipient.value = ""
     this._amount.value = ""
     this._state.value = UiState.idle()
+  }
+
+  private resolveGasOverride(): GasOverride | null {
+    const label = this._selectedTier.value
+    if (label === null) return null
+    const tier = this._gasTiers.value.find(t => t.label === label)
+    if (!tier) return null
+    return {
+      maxFeePerGas: tier.maxFeePerGas,
+      maxPriorityFeePerGas: tier.maxPriorityFeePerGas
+    }
   }
 
   /**

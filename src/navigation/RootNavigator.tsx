@@ -5,6 +5,7 @@ import RootViewModel from "../viewmodels/RootViewModel"
 import OnboardingNavigator from "./OnboardingNavigator"
 import AppNavigator from "./AppNavigator"
 import UnlockScreen from "../screens/UnlockScreen"
+import MigrateScreen from "../screens/MigrateScreen"
 
 function RootNavigator(): JSX.Element {
   const vm = useViewModel(RootViewModel)
@@ -33,6 +34,8 @@ function RootNavigator(): JSX.Element {
       return <OnboardingNavigator onComplete={() => vm.enterApp()} />
     case "unlock":
       return <UnlockScreen onUnlocked={() => vm.enterApp()} />
+    case "migrate":
+      return <MigrateScreen onSubmit={pin => vm.runMigration(pin)} />
     case "app":
       return <AppNavigator />
   }

@@ -34,8 +34,13 @@ function SendScreen(): JSX.Element {
   const canSubmit = useStream(vm.canSubmit$, vm.canSubmit$.value)
   const maxLoading = useStream(vm.maxLoading$, vm.maxLoading$.value)
   const cfg = NetworkRegistry.get(chain)
+  const gasTiers = useStream(vm.gasTiers$, vm.gasTiers$.value)
+  const selectedTier = useStream(vm.selectedTier$, vm.selectedTier$.value)
 
-  useInit(() => vm.bind(chain, fromAddress))
+  useInit(() => {
+    vm.bind(chain, fromAddress)
+    vm.loadGasTiers()
+  })
 
   const explorerUrl =
     state.status === "success" && cfg.explorerUrl ? `${cfg.explorerUrl}/tx/${state.data.hash}` : null
@@ -68,6 +73,28 @@ function SendScreen(): JSX.Element {
           onMaxPress={() => vm.setMaxAmount()}
           maxLoading={maxLoading}
         />
+
+        {gasTiers.length > 0 && (
+          <View style={styles.field}>
+            <Text style={styles.label}>Gas tier</Text>
+            <View style={styles.tierRow}>
+              {gasTiers.map(tier => (
+                <Pressable
+                  key={tier.label}
+                  style={[styles.tierBtn, selectedTier === tier.label && styles.tierBtnActive]}
+                  onPress={() => vm.setSelectedTier(tier.label)}
+                >
+                  <Text style={[styles.tierLabel, selectedTier === tier.label && styles.tierLabelActive]}>
+                    {tier.label}
+                  </Text>
+                  <Text style={[styles.tierMeta, selectedTier === tier.label && styles.tierLabelActive]}>
+                    {(Number(tier.maxFeePerGas / 1_000_000n) / 1000).toFixed(2)} gwei
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
         {state.status === "loading" && (
           <View style={styles.statusBox}>
@@ -116,7 +143,19 @@ const styles = StyleSheet.create({
   successTitle: { fontSize: 14, fontWeight: "700" },
   mono: { fontFamily: "Courier", fontSize: 11 },
   explorerBtn: { marginTop: 10, padding: 12, backgroundColor: "#EEF6FB", borderRadius: 8, alignItems: "center" },
-  explorerBtnText: { fontSize: 13, fontWeight: "600", color: "#0066CC" }
+  explorerBtnText: { fontSize: 13, fontWeight: "600", color: "#0066CC" },
+  tierRow: { flexDirection: "row", gap: 8 },
+  tierBtn: {
+    flex: 1,
+    padding: 8,
+    backgroundColor: "#F2F2F7",
+    borderRadius: 8,
+    alignItems: "center"
+  },
+  tierBtnActive: { backgroundColor: "#007AFF" },
+  tierLabel: { fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
+  tierLabelActive: { color: "#FFFFFF" },
+  tierMeta: { fontSize: 10, opacity: 0.7, marginTop: 2 }
 })
 
 export default SendScreen

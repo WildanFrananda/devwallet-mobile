@@ -38,7 +38,7 @@ exports[`KeyringService snapshot derives a stable address set from the BIP44 tes
     "path": "m/44'/144'/0'/0/0",
   },
   {
-    "address": "0x0407f0ecd1ec6159e6a7c70084aaa7d693d9113149b80ab72618602a185e2c1f2b008b26308abcc83bc7b85e81d147f40c3383713e54acb6d0cc21d7092e3e9a1e",
+    "address": "0x4d108c4e4bde8c8d5cd3c911f21fd5196b12f6041f9676d03f86228785a91f6",
     "chain": "starknet:sepolia",
     "path": "m/44'/9004'/0'/0/0",
   },

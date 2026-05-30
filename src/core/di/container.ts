@@ -13,10 +13,17 @@ import PinService from "../auth/pin.service"
 import DeviceBindingService from "../auth/device-binding.service"
 import DeviceFingerprintService from "../auth/device-fingerprint.service"
 import SecureStorageService from "../auth/secure-storage.service"
+import V03EncryptMigration from "../migration/v0.3-encrypt.migration"
 import PushService from "../notifications/push.service"
 import FaucetDatasource from "../../datasources/faucet/faucet.datasource"
 import FaucetRepositoryImpl from "../../repositories/faucet.repository.impl"
 import FeeDatasource from "../../datasources/fee/fee.datasource"
+import RpcLogRepositoryImpl from "../../repositories/rpc-log.repository.impl"
+import RpcLogSink from "../network/rpc-log.sink"
+import ContractRepositoryImpl from "../../repositories/contract.repository.impl"
+import ContractCallerDatasource from "../../datasources/contract/contract-caller.datasource"
+import GasOracleDatasource from "../../datasources/gas/gas-oracle.datasource"
+import GasRepositoryImpl from "../../repositories/gas.repository.impl"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -32,6 +39,7 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.DeviceBinding, DeviceBindingService)
       getContainer.registerSingleton(Tokens.DeviceFingerprint, DeviceFingerprintService)
       getContainer.registerSingleton(Tokens.SecureStorage, SecureStorageService)
+      getContainer.registerSingleton(Tokens.V03EncryptMigration, V03EncryptMigration)
       getContainer.registerSingleton(Tokens.Push, PushService)
       getContainer.registerSingleton(Tokens.BalanceDatasource, BalanceDatasource)
       getContainer.registerSingleton(Tokens.TokenDatasource, TokenDatasource)
@@ -42,7 +50,16 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.FaucetDatasource, FaucetDatasource)
       getContainer.registerSingleton(Tokens.FaucetRepository, FaucetRepositoryImpl)
       getContainer.registerSingleton(Tokens.FeeDatasource, FeeDatasource)
+      getContainer.registerSingleton(Tokens.RpcLogRepository, RpcLogRepositoryImpl)
+      getContainer.registerSingleton(Tokens.ContractRepository, ContractRepositoryImpl)
+      getContainer.registerSingleton(Tokens.ContractCallerDatasource, ContractCallerDatasource)
+      getContainer.registerSingleton(Tokens.GasOracleDatasource, GasOracleDatasource)
+      getContainer.registerSingleton(Tokens.GasRepository, GasRepositoryImpl)
     })
+    // Resolve the log repo once so the transport sink has a live target
+    // before any RPC call fires. Subsequent resolutions hit the same
+    // singleton instance.
+    RpcLogSink.register(getContainer.resolve<RpcLogRepositoryImpl>(Tokens.RpcLogRepository))
     DIContainer.configured = true
   }
 

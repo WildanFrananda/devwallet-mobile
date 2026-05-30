@@ -13,20 +13,32 @@ import { Chain } from "../core/constants/chains.enum"
 abstract class WalletRepository {
   public abstract hasWallet(): Promise<boolean>
 
-  /** Create wallet from a freshly-generated mnemonic. */
-  public abstract createFromMnemonic(mnemonic: string, requireBiometric?: boolean): Promise<Account>
+  /**
+   * Load a freshly-generated mnemonic into the in-memory keyring. Does NOT
+   * write to keychain — the caller must follow up with `persistEncrypted(pin)`
+   * after the user has set a PIN. This lets onboarding defer the encrypted
+   * write until the PIN is known so the mnemonic never lands plaintext.
+   */
+  public abstract createFromMnemonic(mnemonic: string): Promise<Account>
 
-  /** Restore wallet from a user-supplied mnemonic. */
-  public abstract restore(mnemonic: string, requireBiometric?: boolean): Promise<Account>
+  /** Restore wallet from a user-supplied mnemonic — same defer pattern. */
+  public abstract restore(mnemonic: string): Promise<Account>
+
+  /**
+   * Encrypt the currently-loaded mnemonic with `pin` (AES-256-GCM via
+   * `SecureStorageService`) and write the v2 blob to keychain. Also
+   * stores the PIN in the biometric-cached row so the biometric unlock
+   * path can resolve it later. Idempotent — safe to call multiple times.
+   */
+  public abstract persistEncrypted(pin: string): Promise<void>
 
   /**
    * Read mnemonic from keychain and load keyring.
    *
-   * `method = "biometric"` triggers the Face ID / Touch ID prompt (default).
    * `method = "pin"` requires `pinValue` and runs through `PinService.verifyPin`
-   * before the keychain read. The keychain itself must already be stored
-   * with `requireBiometric = false` for the PIN path, otherwise the read
-   * will still prompt biometric.
+   * before decryption.
+   * `method = "biometric"` reads the cached PIN from the biometric-protected
+   * keychain row (Face ID / Touch ID prompt), then decrypts.
    */
   public abstract unlock(method?: "biometric" | "pin", pinValue?: string, promptMessage?: string): Promise<Account>
 

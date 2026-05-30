@@ -3,7 +3,6 @@ import { StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import SettingsService from "../core/storage/settings.service"
 import AutoLockService from "../core/lifecycle/auto-lock.service"
 import PinService from "../core/auth/pin.service"
-import KeychainService from "../core/storage/keychain.service"
 import { Tokens } from "../core/di/tokens"
 
 @Injectable()
@@ -18,8 +17,7 @@ class SettingsViewModel extends ViewModel {
   public constructor(
     @Inject(Tokens.Settings) private readonly settings: SettingsService,
     @Inject(Tokens.AutoLock) private readonly autoLock: AutoLockService,
-    @Inject(Tokens.Pin) private readonly pin: PinService,
-    @Inject(Tokens.Keychain) private readonly keychain: KeychainService
+    @Inject(Tokens.Pin) private readonly pin: PinService
   ) {
     super()
     this._autoLockMs.value = settings.getAutoLockMs()
@@ -35,17 +33,10 @@ class SettingsViewModel extends ViewModel {
   public setUseBiometric(enabled: boolean): void {
     this.settings.setUseBiometric(enabled)
     this._useBiometric.value = enabled
-    void this.launch(async signal => {
-      try {
-        await this.keychain.setBiometricRequired(enabled)
-      } catch (err) {
-        if (signal.aborted) return
-        // Revert on failure so persisted UI matches keychain state.
-        this.settings.setUseBiometric(!enabled)
-        this._useBiometric.value = !enabled
-        throw err
-      }
-    })
+    // Toggle is purely a routing preference for UnlockScreen — the cached
+    // PIN keychain row stays regardless. Disabling just steers the first
+    // unlock attempt through the typed-PIN path; re-enabling restores the
+    // biometric prompt without re-collecting the PIN.
   }
 
   public changePin(oldPin: string, newPin: string): void {

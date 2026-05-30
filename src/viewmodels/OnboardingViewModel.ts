@@ -80,7 +80,7 @@ class OnboardingViewModel extends ViewModel {
     this._verifyAnswers.value = next
   }
 
-  public submitVerify(requireBiometric: boolean = true): void {
+  public submitVerify(): void {
     const challenge = this._verify.value
     const draft = this._mnemonic.value
     const answers = this._verifyAnswers.value
@@ -98,7 +98,7 @@ class OnboardingViewModel extends ViewModel {
     void this.launch(async signal => {
       try {
         const phrase = draft.data.join(" ")
-        const account = await this.wallet.createFromMnemonic(phrase, requireBiometric)
+        const account = await this.wallet.createFromMnemonic(phrase)
         if (signal.aborted) return
         this._persist.value = UiState.success(account)
         this._navigate.emit("createPin")
@@ -113,7 +113,7 @@ class OnboardingViewModel extends ViewModel {
     this._restoreInput.value = value
   }
 
-  public submitRestore(requireBiometric: boolean = true): void {
+  public submitRestore(): void {
     const phrase = this._restoreInput.value.trim().toLowerCase().replace(/\s+/g, " ")
     const wordCount = phrase.split(" ").length
     if (wordCount !== 12 && wordCount !== 24) {
@@ -124,7 +124,7 @@ class OnboardingViewModel extends ViewModel {
     this._persist.value = UiState.loading()
     void this.launch(async signal => {
       try {
-        const account = await this.wallet.restore(phrase, requireBiometric)
+        const account = await this.wallet.restore(phrase)
         if (signal.aborted) return
         this._persist.value = UiState.success(account)
         this._navigate.emit("createPin")

@@ -62,7 +62,7 @@ function RestoreWalletScreen(): JSX.Element {
           </View>
         )}
 
-        <Button title="Restore wallet" onPress={() => vm.submitRestore(false)} disabled={!canSubmit} />
+        <Button title="Restore wallet" onPress={() => vm.submitRestore()} disabled={!canSubmit} />
       </ScrollView>
     </SafeAreaView>
   )

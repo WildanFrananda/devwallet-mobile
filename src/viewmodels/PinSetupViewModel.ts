@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "react-native-mobile-mvvm/di"
 import { EventFlow, StateFlow, UiState, ViewModel } from "react-native-mobile-mvvm"
 import PinService from "../core/auth/pin.service"
+import WalletRepository from "../repositories/wallet.repository"
 import { Tokens } from "../core/di/tokens"
 
 type Stage = "create" | "confirm"
@@ -19,7 +20,10 @@ class PinSetupViewModel extends ViewModel {
   public readonly save$ = this._save.asReadOnly()
   public readonly saved$ = this._saved.asObservable()
 
-  public constructor(@Inject(Tokens.Pin) private readonly pin: PinService) {
+  public constructor(
+    @Inject(Tokens.Pin) private readonly pin: PinService,
+    @Inject(Tokens.WalletRepository) private readonly wallet: WalletRepository
+  ) {
     super()
   }
 
@@ -55,7 +59,14 @@ class PinSetupViewModel extends ViewModel {
     this._save.value = UiState.loading()
     void this.launch(async signal => {
       try {
-        await this.pin.setPin(this._createValue.value)
+        const pinValue = this._createValue.value
+        await this.pin.setPin(pinValue)
+        if (signal.aborted) return
+        // Now that the PIN is in keychain, encrypt + persist the
+        // mnemonic that onboarding has been holding in-memory. This is
+        // the only place the wallet writes to keychain, so we never
+        // produce a plaintext mnemonic row.
+        await this.wallet.persistEncrypted(pinValue)
         if (signal.aborted) return
         this._save.value = UiState.success(undefined)
         this._saved.emit()
