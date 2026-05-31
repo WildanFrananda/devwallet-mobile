@@ -50,6 +50,17 @@ function SendScreen(): JSX.Element {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Send</Text>
         <Text style={styles.subtitle}>{cfg.name}</Text>
+
+        {chain === Chain.STARKNET_SEPOLIA && (
+          <View style={styles.deployBanner}>
+            <Text style={styles.deployBannerTitle}>First tx auto-deploys your account</Text>
+            <Text style={styles.deployBannerBody}>
+              StarkNet accounts are contracts. If this is your first send, the tx bundles a
+              one-time account deploy (~0.0001 STRK extra). Future sends use normal gas.
+            </Text>
+          </View>
+        )}
+
         <AddressDisplay label="From" address={fromAddress} />
 
         <View style={styles.field}>
@@ -155,7 +166,17 @@ const styles = StyleSheet.create({
   tierBtnActive: { backgroundColor: "#007AFF" },
   tierLabel: { fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
   tierLabelActive: { color: "#FFFFFF" },
-  tierMeta: { fontSize: 10, opacity: 0.7, marginTop: 2 }
+  tierMeta: { fontSize: 10, opacity: 0.7, marginTop: 2 },
+  deployBanner: {
+    backgroundColor: "#FFF3E0",
+    borderRadius: 8,
+    padding: 12,
+    gap: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: "#E65100"
+  },
+  deployBannerTitle: { fontSize: 13, fontWeight: "700", color: "#E65100" },
+  deployBannerBody: { fontSize: 12, color: "#5D4037" }
 })
 
 export default SendScreen

@@ -8,6 +8,7 @@ import {
 } from "@solana/web3.js"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { callAndLog } from "../../core/network/logging-transport"
 import type SendDraft from "../../models/send-draft.model"
 import Transaction from "../../models/transaction.model"
 import type { ChainSigner, SendResult, SignerSecrets } from "./chain-signer.interface"
@@ -33,7 +34,13 @@ class SolanaSigner implements ChainSigner {
       })
     )
 
-    const hash = await sendAndConfirmTransaction(connection, tx, [payer])
+    const hash = await callAndLog({
+      chain: draft.chain,
+      endpoint: cfg.rpcUrl,
+      method: "sendAndConfirmTransaction",
+      params: { to: draft.toAddress, lamports: draft.amount.toString() },
+      run: () => sendAndConfirmTransaction(connection, tx, [payer])
+    })
     const rawTx = tx.serialize().toString("hex")
 
     return { hash, rawTx }
@@ -42,9 +49,16 @@ class SolanaSigner implements ChainSigner {
   public async waitForConfirmation(chain: Chain, hash: string): Promise<Transaction> {
     const cfg = NetworkRegistry.get(chain)
     const connection = new Connection(cfg.rpcUrl, "confirmed")
-    const parsed = await connection.getTransaction(hash, {
-      maxSupportedTransactionVersion: 0,
-      commitment: "confirmed"
+    const parsed = await callAndLog({
+      chain,
+      endpoint: cfg.rpcUrl,
+      method: "getTransaction",
+      params: { hash },
+      run: () =>
+        connection.getTransaction(hash, {
+          maxSupportedTransactionVersion: 0,
+          commitment: "confirmed"
+        })
     })
 
     if (!parsed) {

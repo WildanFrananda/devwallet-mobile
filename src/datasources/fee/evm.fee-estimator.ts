@@ -1,6 +1,7 @@
 import { createPublicClient, http } from "viem"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { loggingTransport } from "../../core/network/logging-transport"
 import type { ChainFeeEstimator } from "./chain-fee-estimator.interface"
 
 const TRANSFER_GAS = 21_000n
@@ -20,7 +21,9 @@ class EvmFeeEstimator implements ChainFeeEstimator {
 
   public async estimateNativeFee(chain: Chain): Promise<bigint> {
     const cfg = NetworkRegistry.get(chain)
-    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+    const client = createPublicClient({
+      transport: loggingTransport(http(cfg.rpcUrl), chain, cfg.rpcUrl)
+    })
     try {
       const fees = await client.estimateFeesPerGas()
       const maxFee = fees.maxFeePerGas ?? fees.gasPrice ?? 2_000_000_000n

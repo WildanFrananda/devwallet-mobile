@@ -8,7 +8,7 @@ type MMKVHandle = ReturnType<typeof createMMKV>
 
 const STORAGE_ID = "devwallet.rpc-logs"
 const STORAGE_KEY = "rpc-log.buffer.v1"
-const MAX_ENTRIES = 200
+const MAX_ENTRIES = 500
 
 /**
  * Ring-buffer-backed log store. Persists the buffer to MMKV so logs

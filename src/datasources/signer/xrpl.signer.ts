@@ -2,6 +2,7 @@ import { Client, Wallet, type Payment } from "xrpl"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
 import Bip44Paths from "../../core/crypto/bip44"
+import { callAndLog } from "../../core/network/logging-transport"
 import type SendDraft from "../../models/send-draft.model"
 import Transaction from "../../models/transaction.model"
 import type { ChainSigner, SendResult, SignerSecrets } from "./chain-signer.interface"
@@ -21,16 +22,34 @@ class XrplSigner implements ChainSigner {
 
     const client = new Client(cfg.rpcUrl)
     try {
-      await client.connect()
+      await callAndLog({
+        chain: draft.chain,
+        endpoint: cfg.rpcUrl,
+        method: "xrpl.Client.connect",
+        params: {},
+        run: () => client.connect()
+      })
       const payment: Payment = {
         TransactionType: "Payment",
         Account: wallet.classicAddress,
         Destination: draft.toAddress,
         Amount: draft.amount.toString()
       }
-      const prepared = await client.autofill(payment)
+      const prepared = await callAndLog({
+        chain: draft.chain,
+        endpoint: cfg.rpcUrl,
+        method: "autofill",
+        params: { tx: payment },
+        run: () => client.autofill(payment)
+      })
       const signed = wallet.sign(prepared)
-      const submitResult = await client.submitAndWait(signed.tx_blob)
+      const submitResult = await callAndLog({
+        chain: draft.chain,
+        endpoint: cfg.rpcUrl,
+        method: "submitAndWait",
+        params: {},
+        run: () => client.submitAndWait(signed.tx_blob)
+      })
       const result = submitResult.result
       return { hash: result.hash, rawTx: signed.tx_blob }
     } finally {
@@ -42,8 +61,20 @@ class XrplSigner implements ChainSigner {
     const cfg = NetworkRegistry.get(chain)
     const client = new Client(cfg.rpcUrl)
     try {
-      await client.connect()
-      const lookup = await client.request({ command: "tx", transaction: hash })
+      await callAndLog({
+        chain,
+        endpoint: cfg.rpcUrl,
+        method: "xrpl.Client.connect",
+        params: {},
+        run: () => client.connect()
+      })
+      const lookup = await callAndLog({
+        chain,
+        endpoint: cfg.rpcUrl,
+        method: "request(tx)",
+        params: { hash },
+        run: () => client.request({ command: "tx", transaction: hash })
+      })
       const tx = lookup.result
       const validated = tx.validated === true
       return new Transaction({

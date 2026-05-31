@@ -2,6 +2,7 @@ import { createPublicClient, createWalletClient, http, type Address, type Hex } 
 import { privateKeyToAccount } from "viem/accounts"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { loggingTransport } from "../../core/network/logging-transport"
 import type SendDraft from "../../models/send-draft.model"
 import Transaction from "../../models/transaction.model"
 import type { ChainSigner, SendResult, SignerSecrets } from "./chain-signer.interface"
@@ -20,7 +21,7 @@ class EvmSigner implements ChainSigner {
   public async send(secrets: SignerSecrets, draft: SendDraft): Promise<SendResult> {
     const cfg = NetworkRegistry.get(draft.chain)
     const account = privateKeyToAccount(secrets.privateKey as Hex)
-    const transport = http(cfg.rpcUrl)
+    const transport = loggingTransport(http(cfg.rpcUrl), draft.chain, cfg.rpcUrl)
     const walletClient = createWalletClient({ account, transport })
     const publicClient = createPublicClient({ transport })
 
@@ -51,7 +52,9 @@ class EvmSigner implements ChainSigner {
 
   public async waitForConfirmation(chain: Chain, hash: string): Promise<Transaction> {
     const cfg = NetworkRegistry.get(chain)
-    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+    const client = createPublicClient({
+      transport: loggingTransport(http(cfg.rpcUrl), chain, cfg.rpcUrl)
+    })
     const receipt = await client.waitForTransactionReceipt({ hash: hash as Hex, timeout: 120_000 })
     const block = await client.getBlock({ blockNumber: receipt.blockNumber })
 

@@ -1,6 +1,7 @@
 import { Client } from "xrpl"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { callAndLog } from "../../core/network/logging-transport"
 import Balance from "../../models/balance.model"
 import type { ChainBalanceFetcher } from "./chain-balance-fetcher.interface"
 
@@ -13,9 +14,21 @@ class XrplBalanceFetcher implements ChainBalanceFetcher {
     const cfg = NetworkRegistry.get(chain)
     const client = new Client(cfg.rpcUrl)
     try {
-      await client.connect()
+      await callAndLog({
+        chain,
+        endpoint: cfg.rpcUrl,
+        method: "xrpl.Client.connect",
+        params: {},
+        run: () => client.connect()
+      })
       try {
-        const xrp: unknown = await client.getXrpBalance(address)
+        const xrp: unknown = await callAndLog({
+          chain,
+          endpoint: cfg.rpcUrl,
+          method: "getXrpBalance",
+          params: { address },
+          run: () => client.getXrpBalance(address)
+        })
         const xrpNumber = typeof xrp === "string" ? parseFloat(xrp) : (xrp as number)
         const drops = BigInt(Math.round(xrpNumber * 1_000_000))
         return new Balance({

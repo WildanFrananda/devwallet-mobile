@@ -174,10 +174,86 @@ async function fetchAndLog<T>(args: {
   }
 }
 
+/**
+ * Generic call wrapper for libraries we can't intercept at the transport
+ * layer (Solana web3.js, Cosmos Stargate, XRPL ws, Starknet RpcProvider).
+ * Wrap any async chain method like:
+ *
+ *   await callAndLog({
+ *     chain: Chain.SOLANA_DEVNET,
+ *     endpoint: cfg.rpcUrl,
+ *     method: "getBalance",
+ *     params: { address },
+ *     run: () => connection.getBalance(pubkey)
+ *   })
+ *
+ * Mock store works too — if a method is mocked, the call is short-circuited.
+ */
+async function callAndLog<T>(args: {
+  chain: Chain
+  endpoint: string
+  method: string
+  params: unknown
+  run: () => Promise<T>
+}): Promise<T> {
+  const start = Date.now()
+  const mock = RpcMockStore.get(args.method)
+  if (mock !== null) {
+    RpcLogSink.record(
+      new RpcLog({
+        id: generateId(),
+        chain: args.chain,
+        endpoint: args.endpoint,
+        method: args.method,
+        params: args.params,
+        response: mock.response,
+        status: "success",
+        latencyMs: Date.now() - start,
+        timestamp: new Date(),
+        mocked: true
+      })
+    )
+    return mock.response as T
+  }
+  try {
+    const result = await args.run()
+    RpcLogSink.record(
+      new RpcLog({
+        id: generateId(),
+        chain: args.chain,
+        endpoint: args.endpoint,
+        method: args.method,
+        params: args.params,
+        response: result,
+        status: "success",
+        latencyMs: Date.now() - start,
+        timestamp: new Date()
+      })
+    )
+    return result
+  } catch (err) {
+    RpcLogSink.record(
+      new RpcLog({
+        id: generateId(),
+        chain: args.chain,
+        endpoint: args.endpoint,
+        method: args.method,
+        params: args.params,
+        response: null,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        status: "error",
+        latencyMs: Date.now() - start,
+        timestamp: new Date()
+      })
+    )
+    throw err
+  }
+}
+
 let counter = 0
 function generateId(): string {
   counter = (counter + 1) % Number.MAX_SAFE_INTEGER
   return `${Date.now().toString(36)}-${counter.toString(36)}`
 }
 
-export { loggingTransport, fetchAndLog }
+export { loggingTransport, fetchAndLog, callAndLog }

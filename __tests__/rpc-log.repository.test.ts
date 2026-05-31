@@ -44,13 +44,13 @@ describe("RpcLogRepositoryImpl", () => {
     expect(repo.list()).toEqual([])
   })
 
-  it("appends newest-first and caps at 200 entries", () => {
+  it("appends newest-first and caps at 500 entries", () => {
     const repo = new RpcLogRepositoryImpl()
-    for (let i = 0; i < 205; i++) repo.append(makeLog(`m${i}`, i))
+    for (let i = 0; i < 510; i++) repo.append(makeLog(`m${i}`, i))
     const list = repo.list()
-    expect(list).toHaveLength(200)
-    expect(list[0]!.method).toBe("m204")
-    expect(list[199]!.method).toBe("m5")
+    expect(list).toHaveLength(500)
+    expect(list[0]!.method).toBe("m509")
+    expect(list[499]!.method).toBe("m10")
   })
 
   it("persists across instances", () => {

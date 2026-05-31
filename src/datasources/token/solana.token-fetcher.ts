@@ -1,6 +1,7 @@
 import { Connection, PublicKey } from "@solana/web3.js"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { callAndLog } from "../../core/network/logging-transport"
 import Token from "../../models/token.model"
 import type { ChainTokenFetcher } from "./chain-token-fetcher.interface"
 
@@ -31,7 +32,13 @@ class SolanaTokenFetcher implements ChainTokenFetcher {
     const connection = new Connection(cfg.rpcUrl, "confirmed")
     const owner = new PublicKey(address)
 
-    const result = await connection.getParsedTokenAccountsByOwner(owner, { programId: TOKEN_PROGRAM_ID })
+    const result = await callAndLog({
+      chain,
+      endpoint: cfg.rpcUrl,
+      method: "getParsedTokenAccountsByOwner",
+      params: { owner: address, programId: TOKEN_PROGRAM_ID.toBase58() },
+      run: () => connection.getParsedTokenAccountsByOwner(owner, { programId: TOKEN_PROGRAM_ID })
+    })
     const list = result.value as unknown as ParsedAccount[]
 
     const tokens: Token[] = []

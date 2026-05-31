@@ -1,6 +1,7 @@
 import { StargateClient } from "@cosmjs/stargate"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
+import { callAndLog } from "../../core/network/logging-transport"
 import Balance from "../../models/balance.model"
 import type { ChainBalanceFetcher } from "./chain-balance-fetcher.interface"
 
@@ -11,9 +12,21 @@ class CosmosBalanceFetcher implements ChainBalanceFetcher {
 
   public async fetch(chain: Chain, address: string): Promise<Balance> {
     const cfg = NetworkRegistry.get(chain)
-    const client = await StargateClient.connect(cfg.rpcUrl)
+    const client = await callAndLog({
+      chain,
+      endpoint: cfg.rpcUrl,
+      method: "StargateClient.connect",
+      params: {},
+      run: () => StargateClient.connect(cfg.rpcUrl)
+    })
     try {
-      const coin = await client.getBalance(address, "uatom")
+      const coin = await callAndLog({
+        chain,
+        endpoint: cfg.rpcUrl,
+        method: "getBalance",
+        params: { address, denom: "uatom" },
+        run: () => client.getBalance(address, "uatom")
+      })
       return new Balance({
         chain,
         address,

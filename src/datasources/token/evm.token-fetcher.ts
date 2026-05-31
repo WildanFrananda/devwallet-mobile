@@ -2,6 +2,7 @@ import { createPublicClient, http, erc20Abi, type Address } from "viem"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
 import { TokenRegistry } from "../../core/constants/token-registry"
+import { loggingTransport } from "../../core/network/logging-transport"
 import Token from "../../models/token.model"
 import type { ChainTokenFetcher } from "./chain-token-fetcher.interface"
 
@@ -21,7 +22,9 @@ class EvmTokenFetcher implements ChainTokenFetcher {
     if (specs.length === 0) return []
 
     const cfg = NetworkRegistry.get(chain)
-    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+    const client = createPublicClient({
+      transport: loggingTransport(http(cfg.rpcUrl), chain, cfg.rpcUrl)
+    })
 
     const settled = await Promise.allSettled(
       specs.map(async spec => {

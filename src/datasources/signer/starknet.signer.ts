@@ -3,6 +3,7 @@ import { createMMKV } from "react-native-mmkv"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
 import { OZ_ACCOUNT_CLASS_HASH } from "../../core/crypto/derivers/starknet.deriver"
+import { callAndLog } from "../../core/network/logging-transport"
 import type SendDraft from "../../models/send-draft.model"
 import Transaction from "../../models/transaction.model"
 import type { ChainSigner, SendResult, SignerSecrets } from "./chain-signer.interface"
@@ -40,17 +41,24 @@ class StarknetSigner implements ChainSigner {
       signer: secrets.privateKey
     })
 
-    await this.ensureDeployed(provider, account, secrets, draft.fromAddress)
+    await this.ensureDeployed(provider, account, secrets, draft.fromAddress, cfg.rpcUrl)
 
     const amount = uint256.bnToUint256(draft.amount.toString())
     const calldata = CallData.compile({
       recipient: draft.toAddress,
       amount
     })
-    const { transaction_hash } = await account.execute({
-      contractAddress: STRK_TOKEN_ADDRESS,
-      entrypoint: "transfer",
-      calldata
+    const { transaction_hash } = await callAndLog({
+      chain: Chain.STARKNET_SEPOLIA,
+      endpoint: cfg.rpcUrl,
+      method: "starknet_execute (STRK transfer)",
+      params: { to: draft.toAddress, amount: draft.amount.toString() },
+      run: () =>
+        account.execute({
+          contractAddress: STRK_TOKEN_ADDRESS,
+          entrypoint: "transfer",
+          calldata
+        })
     })
 
     return { hash: transaction_hash, rawTx: transaction_hash }
@@ -59,7 +67,13 @@ class StarknetSigner implements ChainSigner {
   public async waitForConfirmation(chain: Chain, txHash: string): Promise<Transaction> {
     const cfg = NetworkRegistry.get(chain)
     const provider = new RpcProvider({ nodeUrl: cfg.rpcUrl })
-    const receipt = await provider.waitForTransaction(txHash)
+    const receipt = await callAndLog({
+      chain,
+      endpoint: cfg.rpcUrl,
+      method: "waitForTransaction",
+      params: { txHash },
+      run: () => provider.waitForTransaction(txHash)
+    })
     const value: unknown = (receipt as { value?: unknown }).value ?? receipt
 
     return new Transaction({
@@ -80,11 +94,18 @@ class StarknetSigner implements ChainSigner {
     provider: RpcProvider,
     account: SnAccount,
     secrets: SignerSecrets,
-    address: string
+    address: string,
+    endpoint: string
   ): Promise<void> {
     if (this.deployedFlag(address)) return
     try {
-      await provider.getClassHashAt(address)
+      await callAndLog({
+        chain: Chain.STARKNET_SEPOLIA,
+        endpoint,
+        method: "getClassHashAt",
+        params: { address },
+        run: () => provider.getClassHashAt(address)
+      })
       this.markDeployed(address)
       return
     } catch {
@@ -93,15 +114,28 @@ class StarknetSigner implements ChainSigner {
 
     const publicKey = StarknetSigner.publicKeyHex(secrets.privateKey)
     const constructorCalldata = CallData.compile({ publicKey })
-    const { transaction_hash, contract_address } = await account.deployAccount({
-      classHash: OZ_ACCOUNT_CLASS_HASH,
-      constructorCalldata,
-      addressSalt: publicKey
+    const { transaction_hash, contract_address } = await callAndLog({
+      chain: Chain.STARKNET_SEPOLIA,
+      endpoint,
+      method: "deployAccount",
+      params: { classHash: OZ_ACCOUNT_CLASS_HASH, addressSalt: publicKey },
+      run: () =>
+        account.deployAccount({
+          classHash: OZ_ACCOUNT_CLASS_HASH,
+          constructorCalldata,
+          addressSalt: publicKey
+        })
     })
     if (contract_address.toLowerCase() !== address.toLowerCase()) {
       throw new Error(`Deployed address ${contract_address} does not match derived ${address}`)
     }
-    await provider.waitForTransaction(transaction_hash)
+    await callAndLog({
+      chain: Chain.STARKNET_SEPOLIA,
+      endpoint,
+      method: "waitForTransaction (deploy)",
+      params: { transaction_hash },
+      run: () => provider.waitForTransaction(transaction_hash)
+    })
     this.markDeployed(address)
   }
 
