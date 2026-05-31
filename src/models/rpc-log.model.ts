@@ -13,6 +13,7 @@ class RpcLog {
   public readonly status: RpcLogStatus
   public readonly latencyMs: number
   public readonly timestamp: Date
+  public readonly mocked: boolean
 
   public constructor(params: {
     id: string
@@ -25,6 +26,7 @@ class RpcLog {
     status: RpcLogStatus
     latencyMs: number
     timestamp: Date
+    mocked?: boolean
   }) {
     this.id = params.id
     this.chain = params.chain
@@ -36,6 +38,7 @@ class RpcLog {
     this.status = params.status
     this.latencyMs = params.latencyMs
     this.timestamp = params.timestamp
+    this.mocked = params.mocked ?? false
   }
 
   /**
@@ -54,7 +57,8 @@ class RpcLog {
       errorMessage: this.errorMessage,
       status: this.status,
       latencyMs: this.latencyMs,
-      timestampIso: this.timestamp.toISOString()
+      timestampIso: this.timestamp.toISOString(),
+      mocked: this.mocked
     }
   }
 
@@ -69,7 +73,8 @@ class RpcLog {
       errorMessage: j.errorMessage,
       status: j.status,
       latencyMs: j.latencyMs,
-      timestamp: new Date(j.timestampIso)
+      timestamp: new Date(j.timestampIso),
+      mocked: j.mocked ?? false
     })
   }
 }
@@ -85,6 +90,7 @@ type RpcLogJson = {
   status: RpcLogStatus
   latencyMs: number
   timestampIso: string
+  mocked?: boolean
 }
 
 // BigInts can't be JSON-stringified, and we don't want huge byte arrays

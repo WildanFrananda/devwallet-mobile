@@ -4,6 +4,17 @@ import RpcInspectorViewModel from "../src/viewmodels/RpcInspectorViewModel"
 import RpcLog from "../src/models/rpc-log.model"
 import { Chain } from "../src/core/constants/chains.enum"
 import type RpcLogRepository from "../src/repositories/rpc-log.repository"
+import type RpcReplayDatasource from "../src/datasources/rpc-replay/rpc-replay.datasource"
+import type { ReplayOutcome } from "../src/datasources/rpc-replay/rpc-replay.datasource"
+
+class FakeReplayer implements Pick<RpcReplayDatasource, "replay"> {
+  public next: ReplayOutcome = { kind: "success", response: "ok", latencyMs: 12 }
+  public calls: RpcLog[] = []
+  public replay(log: RpcLog): Promise<ReplayOutcome> {
+    this.calls.push(log)
+    return Promise.resolve(this.next)
+  }
+}
 
 function log(method: string, chain: Chain, status: "success" | "error" = "success"): RpcLog {
   return new RpcLog({
@@ -48,17 +59,19 @@ class FakeRepo implements RpcLogRepository {
   }
 }
 
-function makeVm(): { vm: RpcInspectorViewModel; repo: FakeRepo } {
+function makeVm(): { vm: RpcInspectorViewModel; repo: FakeRepo; replayer: FakeReplayer } {
   const repo = new FakeRepo()
-  const vm = new RpcInspectorViewModel(repo)
-  return { vm, repo }
+  const replayer = new FakeReplayer()
+  const vm = new RpcInspectorViewModel(repo, replayer as unknown as RpcReplayDatasource)
+  return { vm, repo, replayer }
 }
 
 describe("RpcInspectorViewModel", () => {
   it("seeds filteredLogs$ from the repository's current snapshot", () => {
     const repo = new FakeRepo()
     repo.buffer = [log("eth_chainId", Chain.EVM_SEPOLIA)]
-    const vm = new RpcInspectorViewModel(repo)
+    const replayer = new FakeReplayer()
+    const vm = new RpcInspectorViewModel(repo, replayer as unknown as RpcReplayDatasource)
     expect(vm.filteredLogs$.value).toHaveLength(1)
   })
 
@@ -111,5 +124,65 @@ describe("RpcInspectorViewModel", () => {
     const { vm, repo } = makeVm()
     repo.exported = "{}"
     expect(vm.exportJson()).toBe("{}")
+  })
+
+  it("replay() invokes the datasource and surfaces the outcome", async () => {
+    const { vm, repo, replayer } = makeVm()
+    const target = log("eth_chainId", Chain.EVM_SEPOLIA)
+    repo.append(target)
+    replayer.next = { kind: "success", response: "0xaa36a7", latencyMs: 42 }
+    vm.replay(target.id)
+    await new Promise<void>(resolve => setTimeout(() => resolve(), 5))
+    expect(replayer.calls).toHaveLength(1)
+    expect(replayer.calls[0]!.method).toBe("eth_chainId")
+    const out = vm.lastReplay$.value
+    expect(out?.logId).toBe(target.id)
+    expect(out?.outcome.kind).toBe("success")
+  })
+
+  it("replay() is a no-op for an unknown log id", async () => {
+    const { vm, replayer } = makeVm()
+    vm.replay("does-not-exist")
+    await new Promise<void>(resolve => setTimeout(() => resolve(), 5))
+    expect(replayer.calls).toHaveLength(0)
+    expect(vm.lastReplay$.value).toBeNull()
+  })
+
+  it("setMock parses JSON, fallback to raw string", () => {
+    const { vm } = makeVm()
+    vm.setMock("eth_blockNumber", "\"0xff\"")
+    let mocks = vm.mocks$.value
+    expect(mocks.find(m => m.method === "eth_blockNumber")?.response).toBe("0xff")
+    vm.setMock("custom", "raw text not json")
+    mocks = vm.mocks$.value
+    expect(mocks.find(m => m.method === "custom")?.response).toBe("raw text not json")
+    vm.clearAllMocks()
+  })
+
+  it("setMock rejects empty input", () => {
+    const { vm } = makeVm()
+    expect(() => vm.setMock("eth_chainId", "")).toThrow(/empty/i)
+    expect(() => vm.setMock("eth_chainId", "   ")).toThrow(/empty/i)
+  })
+
+  it("deleteMock removes a single entry", () => {
+    const { vm } = makeVm()
+    vm.setMock("eth_chainId", "\"0x1\"")
+    vm.setMock("eth_blockNumber", "\"0x2\"")
+    vm.deleteMock("eth_chainId")
+    const mocks = vm.mocks$.value
+    expect(mocks.map(m => m.method)).toEqual(["eth_blockNumber"])
+    vm.clearAllMocks()
+  })
+
+  it("dismissReplay clears the banner state", async () => {
+    const { vm, repo } = makeVm()
+    const target = log("eth_chainId", Chain.EVM_SEPOLIA)
+    repo.append(target)
+    vm.replay(target.id)
+    await new Promise<void>(resolve => setTimeout(() => resolve(), 5))
+    expect(vm.lastReplay$.value).not.toBeNull()
+    vm.dismissReplay()
+    expect(vm.lastReplay$.value).toBeNull()
   })
 })

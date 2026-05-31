@@ -109,7 +109,8 @@ class ContractTerminalViewModel extends ViewModel {
             contract,
             fn,
             args,
-            privateKey: account.privateKey
+            privateKey: account.privateKey,
+            senderAddress: account.address
           })
           if (signal.aborted) return
           this._callOutcome.value = { kind: "tx", hash: out.txHash }

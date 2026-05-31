@@ -5,6 +5,9 @@ import { Chain } from "../core/constants/chains.enum"
 import { Tokens } from "../core/di/tokens"
 import type RpcLog from "../models/rpc-log.model"
 import type RpcLogRepository from "../repositories/rpc-log.repository"
+import RpcMockStore, { type MockEntry } from "../core/network/rpc-mock.store"
+import type RpcReplayDatasource from "../datasources/rpc-replay/rpc-replay.datasource"
+import type { ReplayOutcome } from "../datasources/rpc-replay/rpc-replay.datasource"
 
 type ChainFilter = Chain | "all"
 type StatusFilter = "all" | "success" | "error"
@@ -47,14 +50,28 @@ class RpcInspectorViewModel extends ViewModel {
     ([logs]) => logs.length
   )
 
-  public constructor(@Inject(Tokens.RpcLogRepository) private readonly repo: RpcLogRepository) {
+  private readonly _mocks = new StateFlow<ReadonlyArray<MockEntry>>([])
+  private readonly _lastReplay = new StateFlow<{ logId: string; outcome: ReplayOutcome } | null>(null)
+  public readonly mocks$ = this._mocks.asReadOnly()
+  public readonly lastReplay$ = this._lastReplay.asReadOnly()
+
+  public constructor(
+    @Inject(Tokens.RpcLogRepository) private readonly repo: RpcLogRepository,
+    @Inject(Tokens.RpcReplayDatasource) private readonly replayer: RpcReplayDatasource
+  ) {
     super()
     this._logs.value = this.repo.list()
+    this._mocks.value = RpcMockStore.list()
     this.repo
       .stream$()
       .pipe(takeUntil(this.destroy$))
       .subscribe(list => {
         this._logs.value = list
+      })
+    RpcMockStore.stream$()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => {
+        this._mocks.value = list
       })
   }
 
@@ -76,6 +93,46 @@ class RpcInspectorViewModel extends ViewModel {
 
   public exportJson(): string {
     return this.repo.exportJson()
+  }
+
+  public replay(logId: string): void {
+    const log = this._logs.value.find(l => l.id === logId)
+    if (!log) return
+    void this.launch(async signal => {
+      const outcome = await this.replayer.replay(log)
+      if (signal.aborted) return
+      this._lastReplay.value = { logId, outcome }
+    })
+  }
+
+  /**
+   * Register a mock for the given method. `responseJson` is parsed as JSON;
+   * invalid JSON falls back to using the raw string as the mock value so
+   * users can mock plain text endpoints. Throws on truly empty input so
+   * the caller can surface the error to the UI.
+   */
+  public setMock(method: string, responseJson: string): void {
+    const trimmed = responseJson.trim()
+    if (trimmed.length === 0) throw new Error("Mock response is empty")
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(trimmed)
+    } catch {
+      parsed = trimmed
+    }
+    RpcMockStore.set(method, parsed)
+  }
+
+  public deleteMock(method: string): void {
+    RpcMockStore.delete(method)
+  }
+
+  public clearAllMocks(): void {
+    RpcMockStore.clear()
+  }
+
+  public dismissReplay(): void {
+    this._lastReplay.value = null
   }
 }
 

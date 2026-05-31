@@ -2,6 +2,7 @@ import { custom, type EIP1193RequestFn, type Transport } from "viem"
 import { Chain } from "../constants/chains.enum"
 import RpcLog from "../../models/rpc-log.model"
 import RpcLogSink from "./rpc-log.sink"
+import RpcMockStore from "./rpc-mock.store"
 
 /**
  * Wraps a viem `Transport` (typically `http(rpcUrl)`) with an interceptor
@@ -20,8 +21,27 @@ function loggingTransport(base: Transport, chain: Chain, endpoint: string): Tran
   // log entries for every failed call.
   return custom(
     {
-      async request({ method, params }) {
+      async request({ method, params }: { method: string; params?: unknown }) {
         const start = Date.now()
+        // Mock short-circuit — registered mocks bypass the network entirely.
+        const mock = RpcMockStore.get(method)
+        if (mock !== null) {
+          RpcLogSink.record(
+            new RpcLog({
+              id: generateId(),
+              chain,
+              endpoint,
+              method,
+              params,
+              response: mock.response,
+              status: "success",
+              latencyMs: Date.now() - start,
+              timestamp: new Date(),
+              mocked: true
+            })
+          )
+          return mock.response
+        }
         // Instantiate the wrapped transport per call so viem's internal
         // chain/timeout context is forwarded correctly. Cheap — viem just
         // captures a closure here.
@@ -80,6 +100,24 @@ async function fetchAndLog<T>(args: {
   fetcher: () => Promise<Response>
 }): Promise<T> {
   const start = Date.now()
+  const mock = RpcMockStore.get(args.method)
+  if (mock !== null) {
+    RpcLogSink.record(
+      new RpcLog({
+        id: generateId(),
+        chain: args.chain,
+        endpoint: args.endpoint,
+        method: args.method,
+        params: args.params,
+        response: mock.response,
+        status: "success",
+        latencyMs: Date.now() - start,
+        timestamp: new Date(),
+        mocked: true
+      })
+    )
+    return mock.response as T
+  }
   try {
     const res = await args.fetcher()
     if (!res.ok) {

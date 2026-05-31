@@ -1,6 +1,13 @@
 import { Injectable } from "react-native-mobile-mvvm/di"
 import { createPublicClient, createWalletClient, http, type Abi, type Address, type Hex } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import {
+  Account as StarknetAccount,
+  Contract as StarknetContract,
+  RpcProvider as StarknetRpcProvider,
+  CallData,
+  type Abi as StarknetAbi
+} from "starknet"
 import { Chain } from "../../core/constants/chains.enum"
 import { NetworkRegistry } from "../../core/constants/networks"
 import { loggingTransport } from "../../core/network/logging-transport"
@@ -14,7 +21,11 @@ type CallArgs = {
   args: ReadonlyArray<string>
 }
 
-type SendArgs = CallArgs & { privateKey: string }
+type SendArgs = CallArgs & {
+  privateKey: string
+  /** Sender account address. Required for non-EVM chains (Starknet, etc.). */
+  senderAddress?: string
+}
 
 type CallResult = {
   value: unknown
@@ -34,11 +45,13 @@ const EVM_CHAINS = new Set<Chain>([
 class ContractCallerDatasource {
   public async call(input: CallArgs): Promise<CallResult> {
     if (EVM_CHAINS.has(input.contract.chain)) return this.evmRead(input)
+    if (input.contract.chain === Chain.STARKNET_SEPOLIA) return this.starknetRead(input)
     throw new Error(`Contract read not supported on ${input.contract.chain} yet`)
   }
 
   public async send(input: SendArgs): Promise<SendResult> {
     if (EVM_CHAINS.has(input.contract.chain)) return this.evmWrite(input)
+    if (input.contract.chain === Chain.STARKNET_SEPOLIA) return this.starknetWrite(input)
     throw new Error(`Contract send not supported on ${input.contract.chain} yet`)
   }
 
@@ -73,6 +86,50 @@ class ContractCallerDatasource {
     })
     const hash = await wallet.writeContract(request)
     return { txHash: hash }
+  }
+
+  private async starknetRead(input: CallArgs): Promise<CallResult> {
+    const cfg = NetworkRegistry.get(input.contract.chain)
+    const provider = new StarknetRpcProvider({ nodeUrl: cfg.rpcUrl })
+    const abi = JSON.parse(input.contract.rawAbi) as StarknetAbi
+    const contract = new StarknetContract({
+      abi,
+      address: input.contract.address,
+      providerOrAccount: provider
+    })
+    const calldata = this.starknetCalldata(input.fn, input.args)
+    const value = await contract.call(input.fn.name, calldata)
+    return { value }
+  }
+
+  private async starknetWrite(input: SendArgs): Promise<SendResult> {
+    if (!input.senderAddress) {
+      throw new Error("Starknet write requires senderAddress (use wallet.derive to get it)")
+    }
+    const cfg = NetworkRegistry.get(input.contract.chain)
+    const provider = new StarknetRpcProvider({ nodeUrl: cfg.rpcUrl })
+    const account = new StarknetAccount({
+      provider,
+      address: input.senderAddress,
+      signer: input.privateKey
+    })
+    const calldata = this.starknetCalldata(input.fn, input.args)
+    const { transaction_hash } = await account.execute({
+      contractAddress: input.contract.address,
+      entrypoint: input.fn.name,
+      calldata
+    })
+    return { txHash: transaction_hash }
+  }
+
+  private starknetCalldata(fn: ContractFunction, args: ReadonlyArray<string>): string[] {
+    const obj: Record<string, string> = {}
+    for (let i = 0; i < fn.inputs.length; i++) {
+      const param = fn.inputs[i]
+      if (!param) continue
+      obj[param.name || `arg${i}`] = args[i] ?? ""
+    }
+    return CallData.compile(obj)
   }
 
   /**

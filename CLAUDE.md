@@ -44,8 +44,7 @@ No `features/<name>/` nesting. Type-based flat layer-grouping — matches PRD §
 ## Known deviations
 
 - **NetworkSelector uses RN `Modal`, not `@gorhom/bottom-sheet`.** PRD §5.1 calls for bottom-sheet UX, but Phase 1 keeps the RN Modal to ship on time. UX-level deviation, no functional impact. Revisit during Phase 2 polish.
-- **PIN-encrypted mnemonic deferred to Phase 3.** `SecureStorageService` (AES-256-GCM via RNQC) is implemented and ready in `core/auth/`, but the Phase 2 onboarding + biometric-cached-PIN flow + v0.2→v0.3 existing-user migration is too large for the carry-over slot. Phase 2 ships with biometric-protected keychain (industry standard, sufficient for testnet wallet). Phase 3 will land the PIN wrap in one focused PR alongside the Starknet account-deploy work.
-- **Starknet send deferred to Phase 3.** Manual deep-link only in Phase 2 faucet. Cairo `FaucetDispenser` contract + account-deploy bundled together post-MVP.
+- **Contract Terminal gas limit picker uses chip presets, not slider.** PRD §4.4 spec calls for a 21k→500k slider, but Phase 3 ships preset chips (21k / 50k / 100k / 200k / 500k) to avoid adding `@react-native-community/slider`. Revisit if user requests fine-grained control.
 
 ## Conventions
 

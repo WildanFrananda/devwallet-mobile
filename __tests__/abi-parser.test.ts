@@ -82,6 +82,39 @@ describe("parseAbi", () => {
     expect(out.functions[1]!.stateMutability).toBe("view")
   })
 
+  it("parses Anchor IDL — instructions become write functions", () => {
+    const idl = JSON.stringify({
+      version: "0.1.0",
+      name: "dev_faucet",
+      instructions: [
+        {
+          name: "initialize",
+          accounts: [],
+          args: [
+            { name: "drip_amount", type: "u64" },
+            { name: "cooldown", type: "u64" }
+          ]
+        },
+        {
+          name: "drip",
+          accounts: [],
+          args: [{ name: "amount", type: { defined: "U256" } }]
+        }
+      ]
+    })
+    const out = parseAbi(idl)
+    expect(out.kind).toBe("solana")
+    expect(out.functions).toHaveLength(2)
+    expect(out.functions[0]!.name).toBe("initialize")
+    expect(out.functions[0]!.stateMutability).toBe("nonpayable")
+    expect(out.functions[0]!.inputs).toHaveLength(2)
+    expect(out.functions[1]!.inputs[0]!.type).toContain("defined")
+  })
+
+  it("rejects an object root without `instructions`", () => {
+    expect(() => parseAbi("{\"name\":\"not-anchor\"}")).toThrow(/EVM|Cairo|Anchor/)
+  })
+
   it("normalises unknown state mutability strings to nonpayable", () => {
     const weird = JSON.stringify([
       {

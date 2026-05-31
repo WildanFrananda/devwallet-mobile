@@ -13,7 +13,7 @@ type ContractFunction = {
   stateMutability: "view" | "pure" | "nonpayable" | "payable" | "external"
 }
 
-type AbiKind = "evm" | "starknet"
+type AbiKind = "evm" | "starknet" | "solana"
 
 class Contract {
   public readonly id: string

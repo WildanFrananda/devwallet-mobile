@@ -6,9 +6,9 @@ type ParsedAbi = {
 }
 
 /**
- * Detects whether `rawAbi` is an EVM JSON ABI or a Cairo (Starknet) ABI
- * and extracts the function list. Anchor / IDL parsing is intentionally
- * out of scope for v0.4 — Solana support comes in a follow-up.
+ * Detects whether `rawAbi` is an EVM JSON ABI, a Cairo (Starknet) ABI,
+ * or an Anchor IDL (Solana) and extracts a unified function list. Root
+ * shape is the discriminator: arrays → EVM/Cairo, objects → Anchor.
  */
 function parseAbi(rawAbi: string): ParsedAbi {
   const trimmed = rawAbi.trim()
@@ -22,15 +22,18 @@ function parseAbi(rawAbi: string): ParsedAbi {
     ;(wrapped as Error & { cause?: unknown }).cause = err
     throw wrapped
   }
-  if (!Array.isArray(json)) {
-    throw new Error("ABI must be a JSON array (EVM ABI or Cairo ABI)")
+  if (Array.isArray(json)) {
+    // Cairo ABIs always include an `interface` or `impl` entry — those
+    // shapes don't appear in EVM ABIs.
+    if (isCairoAbi(json)) {
+      return { kind: "starknet", functions: extractCairoFunctions(json) }
+    }
+    return { kind: "evm", functions: extractEvmFunctions(json) }
   }
-  // Cairo ABIs always include an `interface` or `impl` entry — those
-  // shapes don't appear in EVM ABIs.
-  if (isCairoAbi(json)) {
-    return { kind: "starknet", functions: extractCairoFunctions(json) }
+  if (json !== null && typeof json === "object" && isAnchorIdl(json as Record<string, unknown>)) {
+    return { kind: "solana", functions: extractAnchorFunctions(json as Record<string, unknown>) }
   }
-  return { kind: "evm", functions: extractEvmFunctions(json) }
+  throw new Error("ABI must be EVM JSON array, Cairo ABI array, or Anchor IDL object")
 }
 
 function isCairoAbi(items: ReadonlyArray<unknown>): boolean {
@@ -92,6 +95,56 @@ function extractCairoFunctions(items: ReadonlyArray<unknown>): ReadonlyArray<Con
     }
   }
   return out
+}
+
+/**
+ * Anchor IDL detection: top-level object with `instructions` array. Both
+ * legacy `Idl` and the new `IdlAccountsLayout` shapes carry that key.
+ */
+function isAnchorIdl(obj: Record<string, unknown>): boolean {
+  return Array.isArray(obj.instructions)
+}
+
+/**
+ * Each Anchor instruction becomes one ContractFunction. All instructions
+ * are state-changing (`nonpayable`), so we mark them as such — the
+ * Contract Terminal Read/Write tab treats them as writes only. Anchor
+ * has no concept of "view"; account reads happen via `program.account.X.fetch`
+ * which is out of scope for v0.4.
+ */
+function extractAnchorFunctions(idl: Record<string, unknown>): ReadonlyArray<ContractFunction> {
+  const out: ContractFunction[] = []
+  const instructions = Array.isArray(idl.instructions) ? idl.instructions : []
+  for (const ix of instructions) {
+    if (typeof ix !== "object" || ix === null) continue
+    const obj = ix as Record<string, unknown>
+    const name = typeof obj.name === "string" ? obj.name : null
+    if (name === null) continue
+    const args = Array.isArray(obj.args) ? obj.args.map(coerceAnchorArg) : []
+    out.push({
+      name,
+      inputs: args,
+      outputs: [],
+      stateMutability: "nonpayable"
+    })
+  }
+  return out
+}
+
+function coerceAnchorArg(raw: unknown): { name: string; type: string } {
+  if (typeof raw !== "object" || raw === null) return { name: "", type: "unknown" }
+  const o = raw as Record<string, unknown>
+  const name = typeof o.name === "string" ? o.name : ""
+  // Anchor types can be primitive strings (u64, bool) or nested objects
+  // like `{ vec: { defined: "Foo" } }`. Stringify nested cases so the UI
+  // can still render the type label.
+  const type =
+    typeof o.type === "string"
+      ? o.type
+      : typeof o.type === "object" && o.type !== null
+        ? JSON.stringify(o.type)
+        : "unknown"
+  return { name, type }
 }
 
 function coerceParam(raw: unknown): { name: string; type: string } {

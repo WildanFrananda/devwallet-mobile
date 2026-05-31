@@ -20,6 +20,8 @@ type GasOracleSnapshot = {
   tiers: ReadonlyArray<GasTier>
   /** Last 10 block base fees, oldest → newest, for chart rendering. */
   baseFeeHistory: ReadonlyArray<bigint>
+  /** True when feeHistory returned no reward data; tiers are synthetic. */
+  fallback: boolean
 }
 
 const EVM_CHAINS = new Set<Chain>([
@@ -52,12 +54,28 @@ class GasOracleDatasource {
       blockCount: BLOCK_LOOKBACK,
       rewardPercentiles: PERCENTILES as unknown as number[]
     })
-    // The current block's base fee is the last entry of baseFeePerGas.
     const baseFeeHistory = history.baseFeePerGas
     const baseFee = baseFeeHistory[baseFeeHistory.length - 1] ?? 0n
+    const reward = history.reward ?? []
+
+    // Some testnets (notably Amoy / Base Sepolia bursts) return empty
+    // reward arrays even though baseFee is populated. Fall back to a
+    // single `eth_gasPrice` call and treat the result as the standard
+    // tier — slow/fast diverge by ±20% so the user still gets options.
+    if (reward.length === 0 || reward.every(b => b.length === 0)) {
+      const gasPrice = await client.getGasPrice()
+      const tiers = buildFallbackTiers(gasPrice, baseFee)
+      return {
+        chain,
+        fetchedAtIso: new Date().toISOString(),
+        recentBlockCount: baseFeeHistory.length,
+        tiers,
+        baseFeeHistory,
+        fallback: true
+      }
+    }
 
     // Reward arrays: history.reward[i] = [p25, p50, p95] for block i.
-    const reward = history.reward ?? []
     const tipColumns: bigint[][] = [[], [], []]
     for (const block of reward) {
       for (let p = 0; p < PERCENTILES.length; p++) {
@@ -84,9 +102,43 @@ class GasOracleDatasource {
       fetchedAtIso: new Date().toISOString(),
       recentBlockCount: baseFeeHistory.length,
       tiers,
-      baseFeeHistory
+      baseFeeHistory,
+      fallback: false
     }
   }
+}
+
+function buildFallbackTiers(gasPrice: bigint, baseFee: bigint): GasTier[] {
+  // Construct synthetic ±20% spread around the legacy gasPrice estimate.
+  const standardMaxFee = gasPrice
+  const slowMaxFee = (gasPrice * 8n) / 10n
+  const fastMaxFee = (gasPrice * 12n) / 10n
+  const priorityStandard = standardMaxFee > baseFee ? standardMaxFee - baseFee : 0n
+  const prioritySlow = slowMaxFee > baseFee ? slowMaxFee - baseFee : 0n
+  const priorityFast = fastMaxFee > baseFee ? fastMaxFee - baseFee : 0n
+  return [
+    {
+      label: "slow",
+      baseFee,
+      maxPriorityFeePerGas: prioritySlow,
+      maxFeePerGas: slowMaxFee,
+      estimatedTransferWei: slowMaxFee * TRANSFER_GAS
+    },
+    {
+      label: "standard",
+      baseFee,
+      maxPriorityFeePerGas: priorityStandard,
+      maxFeePerGas: standardMaxFee,
+      estimatedTransferWei: standardMaxFee * TRANSFER_GAS
+    },
+    {
+      label: "fast",
+      baseFee,
+      maxPriorityFeePerGas: priorityFast,
+      maxFeePerGas: fastMaxFee,
+      estimatedTransferWei: fastMaxFee * TRANSFER_GAS
+    }
+  ]
 }
 
 function median(values: ReadonlyArray<bigint>): bigint {

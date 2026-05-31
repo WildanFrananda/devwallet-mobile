@@ -40,6 +40,7 @@ const Tokens = {
   FeeDatasource: Symbol.for("FeeDatasource"),
   ContractCallerDatasource: Symbol.for("ContractCallerDatasource"),
   GasOracleDatasource: Symbol.for("GasOracleDatasource"),
+  RpcReplayDatasource: Symbol.for("RpcReplayDatasource"),
 
   // Repositories (per feature)
   OnboardingRepository: Symbol.for("OnboardingRepository"),
@@ -49,7 +50,8 @@ const Tokens = {
   ContractRepository: Symbol.for("ContractRepository"),
   TxReplayRepository: Symbol.for("TxReplayRepository"),
   WebhookRepository: Symbol.for("WebhookRepository"),
-  GasRepository: Symbol.for("GasRepository")
+  GasRepository: Symbol.for("GasRepository"),
+  GasHistoryRepository: Symbol.for("GasHistoryRepository")
 } as const
 
 export type TokenKey = keyof typeof Tokens

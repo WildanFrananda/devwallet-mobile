@@ -17,10 +17,12 @@ import type Contract from "../models/contract.model"
 import type { ContractFunction } from "../models/contract.model"
 import { Chain } from "../core/constants/chains.enum"
 
-const EVM_CHAINS: ReadonlyArray<Chain> = [
+const SUPPORTED_CHAINS: ReadonlyArray<Chain> = [
   Chain.EVM_SEPOLIA,
   Chain.EVM_POLYGON_AMOY,
-  Chain.EVM_BASE_SEPOLIA
+  Chain.EVM_BASE_SEPOLIA,
+  Chain.STARKNET_SEPOLIA,
+  Chain.SOLANA_DEVNET
 ]
 
 function ContractTerminalScreen(): JSX.Element {
@@ -98,7 +100,7 @@ function AddContractForm({
 
       <Text style={styles.label}>Chain</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-        {EVM_CHAINS.map(c => (
+        {SUPPORTED_CHAINS.map(c => (
           <Pressable
             key={c}
             style={[styles.chip, form.chain === c && styles.chipActive]}
@@ -176,6 +178,10 @@ function ContractDetail({
 }): JSX.Element {
   const outcome = useStream(vm.callOutcome$, vm.callOutcome$.value)
   const argInputs = useStream(vm.argInputs$, vm.argInputs$.value)
+  const [tab, setTab] = useState<"read" | "write">("read")
+  const reads = contract.functions.filter(fn => contract.isRead(fn))
+  const writes = contract.functions.filter(fn => !contract.isRead(fn))
+  const shown = tab === "read" ? reads : writes
 
   return (
     <View>
@@ -185,7 +191,32 @@ function ContractDetail({
       <Text style={styles.detailTitle}>{contract.name}</Text>
       <Text style={styles.detailMeta}>{contract.address}</Text>
 
-      {contract.functions.map(fn => (
+      <View style={styles.tabBar}>
+        <Pressable
+          style={[styles.tab, tab === "read" && styles.tabActive]}
+          onPress={() => setTab("read")}
+        >
+          <Text style={[styles.tabText, tab === "read" && styles.tabTextActive]}>
+            Read · {reads.length}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.tab, tab === "write" && styles.tabActive]}
+          onPress={() => setTab("write")}
+        >
+          <Text style={[styles.tabText, tab === "write" && styles.tabTextActive]}>
+            Write · {writes.length}
+          </Text>
+        </Pressable>
+      </View>
+
+      {shown.length === 0 && (
+        <Text style={styles.empty}>
+          No {tab} functions in this ABI.
+        </Text>
+      )}
+
+      {shown.map(fn => (
         <FunctionRow
           key={`${fn.name}-${fn.inputs.length}`}
           fn={fn}
@@ -328,6 +359,11 @@ const styles = StyleSheet.create({
   runRead: { backgroundColor: "#1976D2" },
   runWrite: { backgroundColor: "#E65100" },
   runText: { color: "#FFFFFF", fontWeight: "600" },
+  tabBar: { flexDirection: "row", marginTop: 12, marginBottom: 8, gap: 8 },
+  tab: { flex: 1, paddingVertical: 8, alignItems: "center", borderRadius: 8, backgroundColor: "#F2F2F7" },
+  tabActive: { backgroundColor: "#007AFF" },
+  tabText: { fontSize: 13, fontWeight: "600", color: "#1C1C1E" },
+  tabTextActive: { color: "#FFFFFF" },
   outcomeBox: { padding: 12, backgroundColor: "#F2F2F7", borderRadius: 10, marginTop: 12, gap: 4 },
   outcomeBoxError: { backgroundColor: "#FFE5E5" },
   outcomeLabel: { fontSize: 11, fontWeight: "700", opacity: 0.6 },

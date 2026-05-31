@@ -24,6 +24,8 @@ import ContractRepositoryImpl from "../../repositories/contract.repository.impl"
 import ContractCallerDatasource from "../../datasources/contract/contract-caller.datasource"
 import GasOracleDatasource from "../../datasources/gas/gas-oracle.datasource"
 import GasRepositoryImpl from "../../repositories/gas.repository.impl"
+import GasHistoryRepositoryImpl from "../../repositories/gas-history.repository.impl"
+import RpcReplayDatasource from "../../datasources/rpc-replay/rpc-replay.datasource"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -55,6 +57,8 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.ContractCallerDatasource, ContractCallerDatasource)
       getContainer.registerSingleton(Tokens.GasOracleDatasource, GasOracleDatasource)
       getContainer.registerSingleton(Tokens.GasRepository, GasRepositoryImpl)
+      getContainer.registerSingleton(Tokens.GasHistoryRepository, GasHistoryRepositoryImpl)
+      getContainer.registerSingleton(Tokens.RpcReplayDatasource, RpcReplayDatasource)
     })
     // Resolve the log repo once so the transport sink has a live target
     // before any RPC call fires. Subsequent resolutions hit the same
