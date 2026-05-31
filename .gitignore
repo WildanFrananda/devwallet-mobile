@@ -84,3 +84,6 @@ android/app/google-services.json
 
 # iOS
 ios/DevWallet/GoogleService-Info.plist
+
+# Coverage reports
+coverage/

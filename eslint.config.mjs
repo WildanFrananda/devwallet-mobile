@@ -14,7 +14,8 @@ export default tseslint.config(
       "android/",
       "ios/",
       ".bundle/",
-      "vendor/"
+      "vendor/",
+      "coverage/"
     ]
   },
   eslint.configs.recommended,
