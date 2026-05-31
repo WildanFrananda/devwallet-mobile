@@ -1,5 +1,4 @@
 import { type JSX } from "react"
-import { Text, View, StyleSheet } from "react-native"
 import { createNativeStackNavigator, type NativeStackScreenProps } from "@react-navigation/native-stack"
 import TabNavigator from "./TabNavigator"
 import TxHistoryScreen from "../screens/TxHistoryScreen"
@@ -9,7 +8,14 @@ import ReceiveScreen from "../screens/ReceiveScreen"
 import ChangePinScreen from "../screens/ChangePinScreen"
 import ContractTerminalScreen from "../screens/ContractTerminalScreen"
 import GasOracleScreen from "../screens/GasOracleScreen"
+import TxReplayScreen from "../screens/TxReplayScreen"
+import WebhookListScreen from "../screens/WebhookListScreen"
+import WebhookCreateScreen from "../screens/WebhookCreateScreen"
+import WebhookDetailScreen from "../screens/WebhookDetailScreen"
+import NftGalleryScreen from "../screens/NftGalleryScreen"
+import RpcInspectorScreen from "../screens/RpcInspectorScreen"
 import type Transaction from "../models/transaction.model"
+import type Webhook from "../models/webhook.model"
 import { Chain } from "../core/constants/chains.enum"
 
 type AppStackParamList = {
@@ -22,17 +28,14 @@ type AppStackParamList = {
   ContractTerminal: undefined
   TxReplay: undefined
   GasOracle: undefined
+  WebhookList: undefined
+  WebhookCreate: undefined
+  WebhookDetail: { webhook: Webhook }
+  NftGallery: undefined
+  RpcInspector: undefined
 }
 
 const Stack = createNativeStackNavigator<AppStackParamList>()
-
-function PlaceholderScreen({ label }: { label: string }): JSX.Element {
-  return (
-    <View style={styles.center}>
-      <Text style={styles.text}>{label}</Text>
-    </View>
-  )
-}
 
 function AppNavigator(): JSX.Element {
   return (
@@ -49,16 +52,16 @@ function AppNavigator(): JSX.Element {
         }}
       </Stack.Screen>
       <Stack.Screen name="ContractTerminal" component={ContractTerminalScreen} />
-      <Stack.Screen name="TxReplay">{() => <PlaceholderScreen label="Tx Replay" />}</Stack.Screen>
+      <Stack.Screen name="TxReplay" component={TxReplayScreen} />
       <Stack.Screen name="GasOracle" component={GasOracleScreen} />
+      <Stack.Screen name="WebhookList" component={WebhookListScreen} />
+      <Stack.Screen name="WebhookCreate" component={WebhookCreateScreen} />
+      <Stack.Screen name="WebhookDetail" component={WebhookDetailScreen} />
+      <Stack.Screen name="NftGallery" component={NftGalleryScreen} />
+      <Stack.Screen name="RpcInspector" component={RpcInspectorScreen} />
     </Stack.Navigator>
   )
 }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  text: { fontSize: 18 }
-})
 
 export default AppNavigator
 export type { AppStackParamList }

@@ -26,6 +26,12 @@ import GasOracleDatasource from "../../datasources/gas/gas-oracle.datasource"
 import GasRepositoryImpl from "../../repositories/gas.repository.impl"
 import GasHistoryRepositoryImpl from "../../repositories/gas-history.repository.impl"
 import RpcReplayDatasource from "../../datasources/rpc-replay/rpc-replay.datasource"
+import ReplayDecoderDatasource from "../../datasources/replay/replay-decoder.datasource"
+import ReplayExecutorDatasource from "../../datasources/replay/replay-executor.datasource"
+import ReplayRepositoryImpl from "../../repositories/replay.repository.impl"
+import WebhookDatasource from "../../datasources/webhook/webhook.datasource"
+import WebhookRepositoryImpl from "../../repositories/webhook.repository.impl"
+import NftDatasource from "../../datasources/nft/nft.datasource"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -59,6 +65,12 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.GasRepository, GasRepositoryImpl)
       getContainer.registerSingleton(Tokens.GasHistoryRepository, GasHistoryRepositoryImpl)
       getContainer.registerSingleton(Tokens.RpcReplayDatasource, RpcReplayDatasource)
+      getContainer.registerSingleton(Tokens.ReplayDecoderDatasource, ReplayDecoderDatasource)
+      getContainer.registerSingleton(Tokens.ReplayExecutorDatasource, ReplayExecutorDatasource)
+      getContainer.registerSingleton(Tokens.ReplayRepository, ReplayRepositoryImpl)
+      getContainer.registerSingleton(Tokens.WebhookDatasource, WebhookDatasource)
+      getContainer.registerSingleton(Tokens.WebhookRepository, WebhookRepositoryImpl)
+      getContainer.registerSingleton(Tokens.NftDatasource, NftDatasource)
     })
     // Resolve the log repo once so the transport sink has a live target
     // before any RPC call fires. Subsequent resolutions hit the same

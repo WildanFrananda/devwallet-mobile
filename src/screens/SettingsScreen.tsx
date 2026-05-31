@@ -67,18 +67,6 @@ function SettingsScreen(): JSX.Element {
           <Text style={styles.rowHint}>Wallet locks after the app stays in background for this long.</Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Developer tools</Text>
-        <View style={styles.section}>
-          <Pressable style={styles.actionRow} onPress={() => nav.navigate("ContractTerminal")}>
-            <Text style={styles.rowLabel}>Contract Terminal</Text>
-            <Text style={styles.actionChevron}>›</Text>
-          </Pressable>
-          <Pressable style={styles.actionRow} onPress={() => nav.navigate("GasOracle")}>
-            <Text style={styles.rowLabel}>Gas Oracle</Text>
-            <Text style={styles.actionChevron}>›</Text>
-          </Pressable>
-        </View>
-
         <Text style={styles.sectionLabel}>About</Text>
         <View style={styles.section}>
           <View style={styles.row}>

@@ -26,11 +26,20 @@ function wirePushTapHandlers(): () => void {
 
 function handleTap(message: RemoteMessage): void {
   const type = typeof message.data?.type === "string" ? message.data.type : null
-  if (type !== "faucet.success" && type !== "faucet.failed") return
   if (!navigationRef.isReady()) return
-  // Within the App tab navigator, the Faucet tab is mounted under the
+  // Within the App tab navigator, target tabs are mounted under the
   // "Main" stack entry. Nested navigation per React Navigation 7 spec.
-  navigationRef.navigate("Main", { screen: "Faucet" })
+  if (type === "faucet.success" || type === "faucet.failed") {
+    navigationRef.navigate("Main", { screen: "Faucet" })
+    return
+  }
+  // Phase 4: webhook fired → push the Webhooks list onto the AppStack
+  // (post-nav-refactor, WebhookList is an AppStack route reached from
+  // the Tools tab). Detail screen needs the full Webhook object, so we
+  // land on the list and let the user tap into the most-recent row.
+  if (type === "webhook.event") {
+    navigationRef.navigate("WebhookList")
+  }
 }
 
 export { wirePushTapHandlers }

@@ -51,7 +51,7 @@ export default tseslint.config(
   {
     rules: {
       // Google style base rules
-      "max-len": ["error", { code: 120, tabWidth: 2 }],
+      "max-len": ["error", { code: 120, tabWidth: 2, "ignoreStrings": true, "ignoreTemplateLiterals": true }],
       "no-tabs": "error",
       indent: ["error", 2, { ignoredNodes: ["PropertyDefinition[decorators]"], "SwitchCase": 1 }],
       "no-mixed-spaces-and-tabs": "error",

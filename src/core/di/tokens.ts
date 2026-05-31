@@ -41,6 +41,10 @@ const Tokens = {
   ContractCallerDatasource: Symbol.for("ContractCallerDatasource"),
   GasOracleDatasource: Symbol.for("GasOracleDatasource"),
   RpcReplayDatasource: Symbol.for("RpcReplayDatasource"),
+  ReplayDecoderDatasource: Symbol.for("ReplayDecoderDatasource"),
+  ReplayExecutorDatasource: Symbol.for("ReplayExecutorDatasource"),
+  WebhookDatasource: Symbol.for("WebhookDatasource"),
+  NftDatasource: Symbol.for("NftDatasource"),
 
   // Repositories (per feature)
   OnboardingRepository: Symbol.for("OnboardingRepository"),
@@ -49,6 +53,7 @@ const Tokens = {
   RpcLogRepository: Symbol.for("RpcLogRepository"),
   ContractRepository: Symbol.for("ContractRepository"),
   TxReplayRepository: Symbol.for("TxReplayRepository"),
+  ReplayRepository: Symbol.for("ReplayRepository"),
   WebhookRepository: Symbol.for("WebhookRepository"),
   GasRepository: Symbol.for("GasRepository"),
   GasHistoryRepository: Symbol.for("GasHistoryRepository")
