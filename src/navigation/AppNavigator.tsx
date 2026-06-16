@@ -14,6 +14,7 @@ import WebhookCreateScreen from "../screens/WebhookCreateScreen"
 import WebhookDetailScreen from "../screens/WebhookDetailScreen"
 import NftGalleryScreen from "../screens/NftGalleryScreen"
 import RpcInspectorScreen from "../screens/RpcInspectorScreen"
+import BackupScreen from "../screens/BackupScreen"
 import type Transaction from "../models/transaction.model"
 import type Webhook from "../models/webhook.model"
 import { Chain } from "../core/constants/chains.enum"
@@ -33,6 +34,7 @@ type AppStackParamList = {
   WebhookDetail: { webhook: Webhook }
   NftGallery: undefined
   RpcInspector: undefined
+  Backup: undefined
 }
 
 const Stack = createNativeStackNavigator<AppStackParamList>()
@@ -59,6 +61,7 @@ function AppNavigator(): JSX.Element {
       <Stack.Screen name="WebhookDetail" component={WebhookDetailScreen} />
       <Stack.Screen name="NftGallery" component={NftGalleryScreen} />
       <Stack.Screen name="RpcInspector" component={RpcInspectorScreen} />
+      <Stack.Screen name="Backup" component={BackupScreen} />
     </Stack.Navigator>
   )
 }

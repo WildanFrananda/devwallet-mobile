@@ -1,6 +1,7 @@
 import { type JSX } from "react"
 import { View, Text, StyleSheet } from "react-native"
 import type { DecodedTx } from "../models/replay.model"
+import { colors, typography, spacing, radius, hairline } from "../theme"
 
 function DecodedTxDisplay({ decoded }: { decoded: DecodedTx }): JSX.Element {
   return (
@@ -53,20 +54,22 @@ function short(addr: string): string {
 }
 
 const styles = StyleSheet.create({
-  box: { backgroundColor: "#F8F8FA", borderRadius: 12, padding: 14, gap: 6 },
-  label: { fontSize: 11, fontWeight: "700", opacity: 0.55, marginTop: 6, textTransform: "uppercase" },
-  value: { fontSize: 13, fontFamily: "Courier" },
-  fnHighlight: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#007AFF",
-    fontFamily: "Courier"
+  box: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs
   },
-  matchedAbi: { fontSize: 10, opacity: 0.5, marginTop: 2 },
-  muted: { fontSize: 12, opacity: 0.55, marginTop: 4 },
-  argRow: { marginTop: 8, gap: 2 },
-  argLabel: { fontSize: 11, opacity: 0.65 },
-  argValue: { fontSize: 12, fontFamily: "Courier" }
+  label: { ...typography.labelXs, color: colors.textMuted, marginTop: spacing.xs },
+  value: { ...typography.monoDataSm, color: colors.textSecondary },
+  fnHighlight: { ...typography.monoDataMd, color: colors.accentText },
+  matchedAbi: { ...typography.monoDataSm, fontSize: 10, color: colors.textMuted, marginTop: spacing.xxs },
+  muted: { ...typography.monoDataSm, color: colors.textMuted, marginTop: spacing.xs },
+  argRow: { marginTop: spacing.sm, gap: spacing.xxs },
+  argLabel: { ...typography.monoDataSm, color: colors.textMuted },
+  argValue: { ...typography.monoDataSm, color: colors.textPrimary }
 })
 
 export default DecodedTxDisplay

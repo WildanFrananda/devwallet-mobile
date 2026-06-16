@@ -1,11 +1,17 @@
 import { type JSX } from "react"
 import { View, Text, StyleSheet } from "react-native"
+import { colors, typography, spacing, radius, hairline } from "../theme"
 
 type Props = {
   words: ReadonlyArray<string>
   highlight?: ReadonlyArray<number>
 }
 
+/**
+ * 12/24-word recovery phrase. Each cell: mono index + mono word on a flat
+ * surface with a hairline border — reads like a numbered code listing.
+ * Highlighted cells (verify step) carry a faint indigo accent border.
+ */
 function MnemonicGrid({ words, highlight = [] }: Props): JSX.Element {
   const highlightSet = new Set(highlight)
   return (
@@ -14,7 +20,7 @@ function MnemonicGrid({ words, highlight = [] }: Props): JSX.Element {
         const isHi = highlightSet.has(i)
         return (
           <View key={`${i}-${word}`} style={[styles.cell, isHi && styles.cellHi]}>
-            <Text style={styles.index}>{i + 1}</Text>
+            <Text style={styles.index}>{String(i + 1).padStart(2, "0")}</Text>
             <Text style={styles.word}>{word}</Text>
           </View>
         )
@@ -24,19 +30,35 @@ function MnemonicGrid({ words, highlight = [] }: Props): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
   cell: {
-    width: "30%",
-    padding: 10,
-    backgroundColor: "#F2F2F7",
-    borderRadius: 8,
+    width: "31%",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6
+    gap: spacing.xs
   },
-  cellHi: { backgroundColor: "#FFE08A" },
-  index: { fontSize: 11, opacity: 0.5, fontVariant: ["tabular-nums"], minWidth: 18 },
-  word: { fontSize: 14, fontWeight: "500" }
+  cellHi: {
+    borderColor: colors.accent
+  },
+  index: {
+    ...typography.monoDataSm,
+    color: colors.textMuted,
+    minWidth: 18
+  },
+  word: {
+    ...typography.monoDataMd,
+    color: colors.textPrimary
+  }
 })
 
 export default MnemonicGrid

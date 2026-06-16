@@ -1,6 +1,7 @@
 import { type JSX } from "react"
 import { View, Text, StyleSheet } from "react-native"
 import type Token from "../models/token.model"
+import { colors, typography, spacing, hairline } from "../theme"
 
 type Props = {
   tokens: ReadonlyArray<Token> | undefined
@@ -22,10 +23,25 @@ function TokenList({ tokens }: Props): JSX.Element | null {
 }
 
 const styles = StyleSheet.create({
-  list: { marginTop: 8, gap: 4, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: "#D1D1D6" },
-  row: { flexDirection: "row", justifyContent: "space-between" },
-  symbol: { fontSize: 12, opacity: 0.7 },
-  amount: { fontSize: 12, fontVariant: ["tabular-nums"] }
+  list: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    gap: spacing.xs,
+    borderTopWidth: hairline,
+    borderColor: colors.border
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  symbol: {
+    ...typography.monoLabelSm,
+    color: colors.textSecondary
+  },
+  amount: {
+    ...typography.monoDataSm,
+    color: colors.textSecondary
+  }
 })
 
 export default TokenList

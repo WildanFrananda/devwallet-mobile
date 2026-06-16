@@ -6,6 +6,7 @@ import OnboardingNavigator from "./OnboardingNavigator"
 import AppNavigator from "./AppNavigator"
 import UnlockScreen from "../screens/UnlockScreen"
 import MigrateScreen from "../screens/MigrateScreen"
+import { colors, typography } from "../theme"
 
 function RootNavigator(): JSX.Element {
   const vm = useViewModel(RootViewModel)
@@ -42,8 +43,14 @@ function RootNavigator(): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
-  error: { color: "#B00020", fontSize: 14, textAlign: "center" }
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: colors.background
+  },
+  error: { ...typography.bodyMd, color: colors.error, textAlign: "center" }
 })
 
 export default RootNavigator

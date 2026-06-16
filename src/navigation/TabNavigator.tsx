@@ -4,6 +4,7 @@ import DashboardScreen from "../screens/DashboardScreen"
 import SettingsScreen from "../screens/SettingsScreen"
 import FaucetScreen from "../screens/FaucetScreen"
 import ToolsScreen from "../screens/ToolsScreen"
+import TabBar from "./TabBar"
 
 type TabParamList = {
   Wallet: undefined
@@ -16,7 +17,7 @@ const Tab = createBottomTabNavigator<TabParamList>()
 
 function TabNavigator(): JSX.Element {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={props => <TabBar {...props} />}>
       <Tab.Screen
         name="Wallet"
         component={DashboardScreen}

@@ -1,5 +1,6 @@
-import { type JSX } from "react"
+import { type JSX, useState } from "react"
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native"
+import { colors, typography, spacing, radius, hairline } from "../theme"
 
 type Props = {
   value: string
@@ -22,23 +23,31 @@ function AmountInput({
   maxLoading,
   testID
 }: Props): JSX.Element {
+  const [focused, setFocused] = useState(false)
   return (
     <View style={styles.field}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
         <TextInput
           testID={testID}
           style={styles.input}
           value={value}
           onChangeText={onChange}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder={placeholder}
+          placeholderTextColor={colors.textMuted}
           keyboardType="decimal-pad"
           autoCapitalize="none"
           autoCorrect={false}
         />
         {onMaxPress && (
           <Pressable style={styles.maxBtn} onPress={onMaxPress} disabled={maxLoading}>
-            {maxLoading ? <ActivityIndicator size="small" /> : <Text style={styles.maxLabel}>MAX</Text>}
+            {maxLoading ? (
+              <ActivityIndicator size="small" color={colors.accentText} />
+            ) : (
+              <Text style={styles.maxLabel}>MAX</Text>
+            )}
           </Pressable>
         )}
         <Text style={styles.symbol}>{symbol}</Text>
@@ -48,19 +57,52 @@ function AmountInput({
 }
 
 const styles = StyleSheet.create({
-  field: { gap: 4 },
-  label: { fontSize: 12, opacity: 0.7 },
+  field: {
+    gap: spacing.xs
+  },
+  label: {
+    ...typography.monoLabelSm,
+    textTransform: "uppercase",
+    color: colors.textMuted
+  },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F2F2F7",
-    borderRadius: 8,
-    paddingRight: 12
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    paddingRight: spacing.md
   },
-  input: { flex: 1, padding: 12, fontSize: 16 },
-  maxBtn: { paddingHorizontal: 10, paddingVertical: 4, backgroundColor: "#007AFF", borderRadius: 6, marginRight: 8 },
-  maxLabel: { color: "#FFFFFF", fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
-  symbol: { fontSize: 13, fontWeight: "600", opacity: 0.6 }
+  inputRowFocused: {
+    borderColor: colors.accent
+  },
+  input: {
+    // Proportional font + letterSpacing 0 — monospace made the placeholder read
+    // as stretched. Amounts are digits, render fine in the system font.
+    fontSize: 18,
+    letterSpacing: 0,
+    flex: 1,
+    color: colors.textPrimary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md
+  },
+  maxBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+    borderColor: colors.accent,
+    marginRight: spacing.sm
+  },
+  maxLabel: {
+    ...typography.monoLabelSm,
+    color: colors.accentText
+  },
+  symbol: {
+    ...typography.monoLabelSm,
+    color: colors.textSecondary
+  }
 })
 
 export default AmountInput

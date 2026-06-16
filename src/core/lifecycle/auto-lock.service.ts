@@ -40,10 +40,19 @@ class AutoLockService {
     this.lastBackgroundAt = null
   }
 
-  /** Force-lock — used by manual logout / Settings → Lock now. */
+  /** Force-lock — used by Settings → Lock now. No-op if already locked. */
   public lockNow(): void {
     if (!this.keyring.isUnlocked()) return
     this.keyring.clear()
+    this._locked.emit()
+  }
+
+  /**
+   * Emit `locked$` unconditionally — used after a hard logout where the keyring
+   * was already cleared by `WalletRepository.clear()`, so `lockNow()`'s
+   * isUnlocked() guard would otherwise swallow the event and leave the UI put.
+   */
+  public signalLocked(): void {
     this._locked.emit()
   }
 

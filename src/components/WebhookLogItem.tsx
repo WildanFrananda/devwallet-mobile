@@ -1,6 +1,7 @@
 import { type JSX } from "react"
 import { View, Text, StyleSheet } from "react-native"
 import type WebhookLog from "../models/webhook-log.model"
+import { colors, typography, spacing, radius, hairline } from "../theme"
 
 type Props = {
   log: WebhookLog
@@ -26,12 +27,19 @@ function WebhookLogItem({ log, testID }: Props): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  logRow: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 10, gap: 4 },
-  logHeader: { flexDirection: "row", justifyContent: "space-between" },
-  logBlock: { fontSize: 12, fontWeight: "700" },
-  logTime: { fontSize: 11, opacity: 0.55 },
-  logHash: { fontSize: 11, fontFamily: "Courier", opacity: 0.7 },
-  logArgs: { fontSize: 11, fontFamily: "Courier" }
+  logRow: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs
+  },
+  logHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  logBlock: { ...typography.monoLabelSm, color: colors.textPrimary },
+  logTime: { ...typography.monoDataSm, color: colors.textMuted },
+  logHash: { ...typography.monoDataSm, color: colors.accentText },
+  logArgs: { ...typography.monoDataSm, color: colors.textSecondary }
 })
 
 export default WebhookLogItem

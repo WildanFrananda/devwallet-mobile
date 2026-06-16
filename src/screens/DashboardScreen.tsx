@@ -8,8 +8,12 @@ import type { AppStackParamList } from "../navigation/AppNavigator"
 import WalletViewModel from "../viewmodels/WalletViewModel"
 import BalanceCard from "../components/BalanceCard"
 import NetworkSelector from "../components/NetworkSelector"
+import DotGridBackground from "../components/DotGridBackground"
+import FadeInView from "../components/FadeInView"
+import CountUpText from "../components/CountUpText"
 import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
+import { colors, typography, spacing, radius, hairline, stagger } from "../theme"
 
 type AppNav = NativeStackNavigationProp<AppStackParamList>
 
@@ -29,8 +33,6 @@ function DashboardScreen(): JSX.Element {
     vm.startAutoRefresh()
   })
 
-  // Refresh whenever Wallet tab regains focus (e.g. after Faucet roundtrip).
-  // Silent — keep the rendered list painted while the new fetch resolves.
   useFocusEffect(
     useCallback(() => {
       vm.refreshPortfolio(0)
@@ -42,7 +44,6 @@ function DashboardScreen(): JSX.Element {
   }
 
   function onEntryRendered(chain: Chain, address: string): void {
-    // Lazy fetch tokens once per chain; refresh manually by pull-to-refresh.
     if (tokenMap[chain] === undefined) {
       vm.loadTokens(chain, address)
     }
@@ -58,50 +59,56 @@ function DashboardScreen(): JSX.Element {
     : []
 
   const selectorLabel = chainFilter === "all" ? "All networks" : NetworkRegistry.get(chainFilter).name
+  const networkCount = portfolio ? portfolio.entries.length : 0
 
   return (
-    <View
-      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
-      testID="dashboard-screen"
-    >
+    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]} testID="dashboard-screen">
+      <DotGridBackground />
+
       <View style={styles.headerBar}>
-        <Text style={styles.title}>Portfolio</Text>
+        <Text style={styles.eyebrow}>PORTFOLIO · {networkCount} NETWORKS</Text>
         <Pressable style={styles.networkBtn} onPress={() => setSelectorOpen(true)}>
           <Text style={styles.networkBtnText}>{selectorLabel} ▾</Text>
         </Pressable>
       </View>
 
-      {totalUsd !== null && (
-        <View style={styles.totalBox}>
-          <Text style={styles.totalAmount}>
-            ${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </Text>
-          <Text style={styles.totalLabel}>TESTNET — not real value</Text>
+      <View style={styles.totalBox}>
+        <CountUpText value={totalUsd} style={styles.totalAmount} />
+        <View style={styles.testnetTag}>
+          <View style={styles.testnetDot} />
+          <Text style={styles.testnetLabel}>TESTNET — NOT REAL VALUE</Text>
+        </View>
+      </View>
+
+      {errorMessage && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{errorMessage}</Text>
         </View>
       )}
 
-      {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
-
       {portfolio === null && errorMessage === null ? (
         <View style={styles.center}>
-          <ActivityIndicator />
+          <ActivityIndicator color={colors.accent} />
         </View>
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />
+          }
         >
-          {entries.map(e => {
+          {entries.map((e, i) => {
             onEntryRendered(e.account.chain, e.account.address)
             return (
-              <BalanceCard
-                key={e.account.chain}
-                testID={`balance-card.${e.account.chain.replace(/:/g, "-")}`}
-                entry={e}
-                loading={false}
-                tokens={tokenMap[e.account.chain]}
-                onPress={() => nav.navigate("TxHistory", { chain: e.account.chain, address: e.account.address })}
-              />
+              <FadeInView key={e.account.chain} delay={Math.min(i, 8) * stagger} translateY={12}>
+                <BalanceCard
+                  testID={`balance-card.${e.account.chain.replace(/:/g, "-")}`}
+                  entry={e}
+                  loading={false}
+                  tokens={tokenMap[e.account.chain]}
+                  onPress={() => nav.navigate("TxHistory", { chain: e.account.chain, address: e.account.address })}
+                />
+              </FadeInView>
             )
           })}
           {portfolio !== null && entries.length === 0 && (
@@ -121,29 +128,88 @@ function DashboardScreen(): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background
+  },
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm
   },
-  title: { fontSize: 24, fontWeight: "700" },
+  eyebrow: {
+    ...typography.monoLabelSm,
+    color: colors.textMuted
+  },
   networkBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#F2F2F7",
-    borderRadius: 8
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+    borderColor: colors.border
   },
-  networkBtnText: { fontSize: 13, fontWeight: "500" },
-  list: { padding: 20, gap: 10 },
-  totalBox: { alignItems: "center", paddingHorizontal: 20, paddingBottom: 8 },
-  totalAmount: { fontSize: 32, fontWeight: "700" },
-  totalLabel: { fontSize: 11, color: "#B27800", fontWeight: "600", marginTop: 2, letterSpacing: 0.5 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  error: { color: "#B00020", paddingHorizontal: 20, paddingVertical: 8, textAlign: "center" },
-  empty: { textAlign: "center", opacity: 0.5, marginTop: 32 }
+  networkBtnText: {
+    ...typography.monoLabelSm,
+    color: colors.textSecondary
+  },
+  totalBox: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm
+  },
+  totalAmount: {
+    ...typography.headlineLg,
+    color: colors.textPrimary
+  },
+  testnetTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  testnetDot: {
+    width: 6,
+    height: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.warning
+  },
+  testnetLabel: {
+    ...typography.monoLabelSm,
+    color: colors.warning
+  },
+  list: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    gap: spacing.sm
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  errorBox: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.error,
+    backgroundColor: colors.surface
+  },
+  errorText: {
+    ...typography.bodyMd,
+    color: colors.error,
+    textAlign: "center"
+  },
+  empty: {
+    ...typography.monoLabelSm,
+    color: colors.textMuted,
+    textAlign: "center",
+    marginTop: spacing.xxl
+  }
 })
 
 export default DashboardScreen

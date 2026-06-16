@@ -12,6 +12,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
 import { useViewModel, useStream } from "react-native-mobile-mvvm"
 import WebhookCreateViewModel from "../viewmodels/WebhookCreateViewModel"
+import { NetworkRegistry } from "../core/constants/networks"
+import type { Chain } from "../core/constants/chains.enum"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline, chainColors, type ChainColorKey } from "../theme"
+
+function chainName(c: string): string {
+  try {
+    return NetworkRegistry.get(c as unknown as Chain).name
+  } catch {
+    return c
+  }
+}
 
 function WebhookCreateScreen(): JSX.Element {
   const vm = useViewModel(WebhookCreateViewModel)
@@ -29,8 +41,9 @@ function WebhookCreateScreen(): JSX.Element {
       style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       testID="webhook-create-screen"
     >
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Pressable testID="webhook-create.back" onPress={() => nav.goBack()}>
+        <Pressable testID="webhook-create.back" onPress={() => nav.goBack()} hitSlop={8}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>New webhook</Text>
@@ -38,35 +51,42 @@ function WebhookCreateScreen(): JSX.Element {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.label}>Chain</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          {vm.supportedChains.map(c => (
-            <Pressable
-              key={c}
-              testID={`webhook-create.chain.${c}`}
-              style={[styles.chip, chain === c && styles.chipActive]}
-              onPress={() => vm.setChain(c)}
-            >
-              <Text style={[styles.chipText, chain === c && styles.chipTextActive]}>{c}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <Text style={styles.label}>CHAIN</Text>
+        <View style={styles.chipRow}>
+          {vm.supportedChains.map(c => {
+            const active = chain === c
+            const hue = chainColors[c as ChainColorKey] ?? colors.border
+            return (
+              <Pressable
+                key={c}
+                testID={`webhook-create.chain.${c}`}
+                style={[styles.chip, active && { backgroundColor: hue + "1f", borderColor: hue }]}
+                onPress={() => vm.setChain(c)}
+              >
+                <View style={[styles.chipDot, { backgroundColor: hue }]} />
+                <Text style={[styles.chipText, active && { color: colors.textPrimary }]}>{chainName(c)}</Text>
+              </Pressable>
+            )
+          })}
+        </View>
 
-        <Text style={styles.label}>Contract address</Text>
+        <Text style={styles.label}>CONTRACT ADDRESS</Text>
         <TextInput
           testID="webhook-create.contract"
-          style={styles.input}
+          style={[styles.input, styles.mono]}
           placeholder="0x…"
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           value={contractAddress}
           onChangeText={(v: string) => vm.setContractAddress(v)}
         />
 
-        <Text style={styles.label}>ABI (optional — improves event picker + decoded args)</Text>
+        <Text style={styles.label}>ABI (OPTIONAL — IMPROVES EVENT PICKER + DECODED ARGS)</Text>
         <TextInput
           style={[styles.input, styles.abi]}
           placeholder='[{"type":"event","name":"Transfer", ...}]'
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           multiline
@@ -94,11 +114,12 @@ function WebhookCreateScreen(): JSX.Element {
           </>
         )}
 
-        <Text style={styles.label}>Event signature</Text>
+        <Text style={styles.label}>EVENT SIGNATURE</Text>
         <TextInput
           testID="webhook-create.event-signature"
-          style={styles.input}
+          style={[styles.input, styles.mono]}
           placeholder="Transfer(address,address,uint256)"
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           value={eventSignature}
@@ -146,58 +167,86 @@ function WebhookCreateScreen(): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm
   },
-  back: { color: "#007AFF", fontSize: 14 },
-  title: { fontSize: 18, fontWeight: "700" },
+  back: { ...typography.monoLabelSm, color: colors.accentText },
+  title: { ...typography.titleMd, color: colors.textPrimary },
   right: { width: 36 },
-  body: { padding: 16, gap: 6 },
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    opacity: 0.55,
-    textTransform: "uppercase",
-    marginTop: 8
-  },
-  chipRow: { gap: 8, paddingVertical: 6 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "#F2F2F7", borderRadius: 16 },
-  chipActive: { backgroundColor: "#007AFF" },
-  chipText: { fontSize: 12, color: "#1C1C1E" },
-  chipTextActive: { color: "#FFFFFF" },
-  input: {
-    backgroundColor: "#F2F2F7",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14
-  },
-  abi: { minHeight: 100, fontFamily: "Courier", fontSize: 12, textAlignVertical: "top" },
-  candidateList: { gap: 6 },
-  candidate: { padding: 10, backgroundColor: "#F8F8FA", borderRadius: 8 },
-  candidateActive: { backgroundColor: "#E3F2FD", borderWidth: 1, borderColor: "#1976D2" },
-  candidateText: { fontFamily: "Courier", fontSize: 12 },
-  errorText: { color: "#B00020", marginTop: 8 },
-  center: { padding: 16, alignItems: "center" },
-  primaryBtn: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
-    borderRadius: 10,
+  body: { padding: spacing.lg, gap: spacing.xs },
+  label: { ...typography.labelXs, color: colors.textMuted, marginTop: spacing.sm },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, paddingVertical: spacing.xs },
+  chip: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 12
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.full
   },
-  primaryBtnDisabled: { opacity: 0.5 },
-  primaryBtnText: { color: "#FFFFFF", fontWeight: "600" },
-  success: { backgroundColor: "#E6F4EA", borderRadius: 10, padding: 12, marginTop: 12, gap: 6 },
-  successTitle: { fontSize: 14, fontWeight: "700" },
-  successBody: { fontSize: 12 },
-  linkBtn: { paddingTop: 4 },
-  linkBtnText: { fontSize: 13, color: "#007AFF", fontWeight: "600" }
+  chipDot: { width: 7, height: 7, borderRadius: radius.full },
+  chipText: { ...typography.monoLabelSm, color: colors.textSecondary },
+  input: {
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: 14,
+    letterSpacing: 0,
+    color: colors.textPrimary
+  },
+  mono: { ...typography.monoDataSm, fontSize: 13, color: colors.textPrimary },
+  abi: { minHeight: 100, ...typography.monoDataSm, color: colors.textPrimary, textAlignVertical: "top" },
+  candidateList: { gap: spacing.xs },
+  candidate: {
+    padding: spacing.sm,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.md
+  },
+  candidateActive: { backgroundColor: colors.accentGlow, borderColor: colors.accent },
+  candidateText: { ...typography.monoDataSm, color: colors.textSecondary },
+  errorText: { ...typography.monoDataSm, color: colors.error, marginTop: spacing.sm },
+  center: { padding: spacing.md, alignItems: "center" },
+  primaryBtn: {
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    alignItems: "center",
+    marginTop: spacing.md,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 4
+  },
+  primaryBtnDisabled: { opacity: 0.5, shadowOpacity: 0 },
+  primaryBtnText: { ...typography.monoLabelSm, fontSize: 13, color: colors.onAccent },
+  success: {
+    backgroundColor: colors.successGlow,
+    borderWidth: hairline,
+    borderColor: colors.success + "55",
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    gap: spacing.xs
+  },
+  successTitle: { ...typography.titleMd, color: colors.success },
+  successBody: { ...typography.bodyMd, color: colors.textSecondary },
+  linkBtn: { paddingTop: spacing.xs },
+  linkBtnText: { ...typography.monoLabelSm, color: colors.accentText }
 })
 
 export default WebhookCreateScreen

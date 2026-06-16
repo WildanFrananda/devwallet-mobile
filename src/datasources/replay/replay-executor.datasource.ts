@@ -53,7 +53,12 @@ class ReplayExecutorDatasource {
 
     const cfg = NetworkRegistry.get(args.replayChain)
     const account = privateKeyToAccount(args.privateKey as Hex)
-    const transport = loggingTransport(http(cfg.rpcUrl), args.replayChain, cfg.rpcUrl)
+    // Bounded timeout + retries — see decoder note (iOS-sim HTTP/3 QUIC stall).
+    const transport = loggingTransport(
+      http(cfg.rpcUrl, { timeout: 12_000, retryCount: 3, retryDelay: 500 }),
+      args.replayChain,
+      cfg.rpcUrl
+    )
     const walletClient = createWalletClient({ account, chain: undefined, transport })
     const publicClient = createPublicClient({ transport })
 

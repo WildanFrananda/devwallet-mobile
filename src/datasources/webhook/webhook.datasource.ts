@@ -62,7 +62,7 @@ class WebhookDatasource {
     deviceFingerprint: string
     abi?: string
   }): Promise<WebhookResponse> {
-    const res = await fetch(`${this.base}/api/v1/webhooks`, {
+    const res = await fetch(`${this.base}/webhooks`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
@@ -73,21 +73,21 @@ class WebhookDatasource {
 
   public async list(deviceFingerprint: string): Promise<WebhookResponse[]> {
     const res = await fetch(
-      `${this.base}/api/v1/webhooks?device=${encodeURIComponent(deviceFingerprint)}`
+      `${this.base}/webhooks?device=${encodeURIComponent(deviceFingerprint)}`
     )
     if (!res.ok) throw new Error(`GET /webhooks ${res.status}`)
     return (await res.json()) as WebhookResponse[]
   }
 
   public async remove(id: string): Promise<void> {
-    const res = await fetch(`${this.base}/api/v1/webhooks/${id}`, { method: "DELETE" })
+    const res = await fetch(`${this.base}/webhooks/${id}`, { method: "DELETE" })
     if (!res.ok && res.status !== 204) {
       throw new Error(`DELETE /webhooks/${id} ${res.status}`)
     }
   }
 
   public async logs(id: string, limit: number = 50): Promise<WebhookLogResponse[]> {
-    const res = await fetch(`${this.base}/api/v1/webhooks/${id}/logs?limit=${limit}`)
+    const res = await fetch(`${this.base}/webhooks/${id}/logs?limit=${limit}`)
     if (!res.ok) throw new Error(`GET /webhooks/${id}/logs ${res.status}`)
     return (await res.json()) as WebhookLogResponse[]
   }
@@ -121,7 +121,10 @@ class WebhookDatasource {
 
   private connect(): void {
     if (!this.deviceId) return
-    const url = `${this.base.replace(/^http/, "ws")}/webhooks/ws?deviceId=${encodeURIComponent(this.deviceId)}`
+    // WS gateways are NOT under the HTTP globalPrefix ("api/v1"), so strip it:
+    // the gateway lives at server root `/webhooks/ws`.
+    const wsOrigin = this.base.replace(/^http/, "ws").replace(/\/api\/v1\/?$/, "")
+    const url = `${wsOrigin}/webhooks/ws?deviceId=${encodeURIComponent(this.deviceId)}`
     const socket = new WebSocket(url) as unknown as RnWebSocket
     this.socket = socket
     socket.onopen = () => {

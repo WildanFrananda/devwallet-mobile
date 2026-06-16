@@ -3,12 +3,14 @@ import SettingsViewModel from "../src/viewmodels/SettingsViewModel"
 import type SettingsService from "../src/core/storage/settings.service"
 import type AutoLockService from "../src/core/lifecycle/auto-lock.service"
 import type PinService from "../src/core/auth/pin.service"
+import type WalletRepository from "../src/repositories/wallet.repository"
 
 function makeVm(): {
   vm: SettingsViewModel
   settings: jest.Mocked<SettingsService>
   autoLock: jest.Mocked<AutoLockService>
   pin: jest.Mocked<PinService>
+  wallet: jest.Mocked<WalletRepository>
   } {
   const settings = {
     getAutoLockMs: jest.fn(() => 30_000),
@@ -18,12 +20,16 @@ function makeVm(): {
   } as unknown as jest.Mocked<SettingsService>
   const autoLock = {
     setLockAfter: jest.fn(),
-    lockNow: jest.fn()
+    lockNow: jest.fn(),
+    signalLocked: jest.fn()
   } as unknown as jest.Mocked<AutoLockService>
   const pin = {
     changePin: jest.fn(async () => undefined)
   } as unknown as jest.Mocked<PinService>
-  return { vm: new SettingsViewModel(settings, autoLock, pin), settings, autoLock, pin }
+  const wallet = {
+    clear: jest.fn(async () => undefined)
+  } as unknown as jest.Mocked<WalletRepository>
+  return { vm: new SettingsViewModel(settings, autoLock, pin, wallet), settings, autoLock, pin, wallet }
 }
 
 async function flush(): Promise<void> {
@@ -81,11 +87,21 @@ describe("SettingsViewModel", () => {
       setUseBiometric: jest.fn()
     } as unknown as jest.Mocked<SettingsService>
     const autoLock = { setLockAfter: jest.fn(), lockNow: jest.fn() } as unknown as jest.Mocked<AutoLockService>
-    const vm = new SettingsViewModel(settings, autoLock, pin)
+    const wallet = { clear: jest.fn(async () => undefined) } as unknown as jest.Mocked<WalletRepository>
+    const vm = new SettingsViewModel(settings, autoLock, pin, wallet)
     vm.changePin("a", "b")
     await flush()
     const state = vm.changePin$.value
     expect(state.status).toBe("error")
     if (state.status === "error") expect(state.message).toMatch(/wrong current/)
+  })
+
+  it("logout wipes the wallet then signals the lock", async () => {
+    const { vm, wallet, autoLock } = makeVm()
+    vm.logout()
+    await flush()
+    expect(wallet.clear).toHaveBeenCalled()
+    expect(autoLock.signalLocked).toHaveBeenCalled()
+    expect(vm.logout$.value.status).toBe("success")
   })
 })

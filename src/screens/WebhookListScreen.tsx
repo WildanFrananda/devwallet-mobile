@@ -15,8 +15,22 @@ import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
 import WebhookListViewModel from "../viewmodels/WebhookListViewModel"
 import type { AppStackParamList } from "../navigation/AppNavigator"
 import type Webhook from "../models/webhook.model"
+import { NetworkRegistry } from "../core/constants/networks"
+import type { Chain } from "../core/constants/chains.enum"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline, chainColors, type ChainColorKey } from "../theme"
 
 type AppNav = NativeStackNavigationProp<AppStackParamList>
+
+// Webhook.chain is a string union (same values as the Chain enum); cast to look
+// up the human-readable network name.
+function chainName(c: Webhook["chain"]): string {
+  try {
+    return NetworkRegistry.get(c as unknown as Chain).name
+  } catch {
+    return String(c)
+  }
+}
 
 function WebhookListScreen(): JSX.Element {
   const vm = useViewModel(WebhookListViewModel)
@@ -43,8 +57,9 @@ function WebhookListScreen(): JSX.Element {
       style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       testID="webhook-list-screen"
     >
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Pressable onPress={() => nav.goBack()}>
+        <Pressable onPress={() => nav.goBack()} hitSlop={8}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <View style={styles.titleWrap}>
@@ -95,11 +110,21 @@ function WebhookRow({
   index: number
   onPress: () => void
 }): JSX.Element {
+  const hue = chainColors[webhook.chain as ChainColorKey] ?? colors.border
   return (
-    <Pressable testID={`webhook-list.row.${index}`} style={styles.row} onPress={onPress}>
-      <Text style={styles.rowEvent}>{webhook.eventName()}</Text>
-      <Text style={styles.rowMeta}>
-        {webhook.chain} · {webhook.contractAddress.slice(0, 10)}…
+    <Pressable
+      testID={`webhook-list.row.${index}`}
+      style={[styles.row, { borderColor: hue + "33" }]}
+      onPress={onPress}
+    >
+      <View style={styles.rowEventLine}>
+        <View style={[styles.chainDot, { backgroundColor: hue }]} />
+        <Text style={styles.rowEvent} numberOfLines={1}>
+          {webhook.eventName()}
+        </Text>
+      </View>
+      <Text style={styles.rowMeta} numberOfLines={1}>
+        {chainName(webhook.chain)} · {webhook.contractAddress.slice(0, 10)}…
       </Text>
       <Text style={styles.rowExpires}>expires {webhook.expiresAt.toLocaleDateString()}</Text>
     </Pressable>
@@ -107,27 +132,37 @@ function WebhookRow({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm
   },
-  back: { color: "#007AFF", fontSize: 14 },
-  titleWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
-  title: { fontSize: 18, fontWeight: "700" },
-  pulseDot: { width: 8, height: 8, backgroundColor: "#34C759", borderRadius: 4 },
-  headerAction: { color: "#007AFF", fontSize: 14, fontWeight: "600" },
-  list: { padding: 16, gap: 8 },
+  back: { ...typography.monoLabelSm, color: colors.accentText },
+  titleWrap: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  title: { ...typography.titleMd, color: colors.textPrimary },
+  pulseDot: { width: 8, height: 8, backgroundColor: colors.success, borderRadius: radius.full },
+  headerAction: { ...typography.monoLabelSm, color: colors.accentText },
+  list: { padding: spacing.lg, gap: spacing.sm },
   center: { padding: 40, alignItems: "center" },
-  empty: { textAlign: "center", opacity: 0.55, marginTop: 40 },
-  errorText: { color: "#B00020", padding: 12 },
-  row: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 12, gap: 2 },
-  rowEvent: { fontSize: 14, fontWeight: "600", fontFamily: "Courier" },
-  rowMeta: { fontSize: 11, opacity: 0.65, fontFamily: "Courier" },
-  rowExpires: { fontSize: 11, opacity: 0.5 }
+  empty: { ...typography.bodyMd, color: colors.textMuted, textAlign: "center", marginTop: 40 },
+  errorText: { ...typography.monoDataSm, color: colors.error, padding: spacing.md },
+  row: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xxs
+  },
+  rowEventLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  chainDot: { width: 7, height: 7, borderRadius: radius.full },
+  rowEvent: { ...typography.monoDataSm, fontSize: 14, color: colors.textPrimary, flexShrink: 1 },
+  rowMeta: { ...typography.monoDataSm, color: colors.textMuted },
+  rowExpires: { ...typography.monoDataSm, fontSize: 10, color: colors.textMuted }
 })
 
 export default WebhookListScreen

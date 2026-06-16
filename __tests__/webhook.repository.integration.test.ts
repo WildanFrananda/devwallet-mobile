@@ -19,9 +19,11 @@ jest.mock("react-native-mmkv", () => ({
   })
 }))
 
+// Mirror the real .env: API_BASE_URL already includes the /api/v1 prefix, so
+// datasources append only the resource path (see faucet convention).
 jest.mock("react-native-config", () => ({
   __esModule: true,
-  default: { API_BASE_URL: "http://localhost:3000" }
+  default: { API_BASE_URL: "http://localhost:3000/api/v1" }
 }))
 
 const FP = "fp-deadbeef-1234"

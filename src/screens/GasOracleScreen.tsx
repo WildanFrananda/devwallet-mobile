@@ -10,6 +10,8 @@ import { NetworkRegistry } from "../core/constants/networks"
 import { PriceRegistry } from "../core/constants/prices"
 import type { GasTier } from "../datasources/gas/gas-oracle.datasource"
 import type { GasSample } from "../repositories/gas-history.repository"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline, chainColors, type ChainColorKey } from "../theme"
 
 const TIERS: ReadonlyArray<SelectedTier> = ["slow", "standard", "fast"]
 
@@ -30,30 +32,36 @@ function GasOracleScreen(): JSX.Element {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Pressable onPress={() => nav.goBack()}>
+        <Pressable onPress={() => nav.goBack()} hitSlop={8}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>Gas Oracle</Text>
-        <Pressable onPress={() => vm.refresh()}>
+        <Pressable onPress={() => vm.refresh()} hitSlop={8}>
           <Text style={styles.refresh}>↻</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          {vm.chains.map(c => (
-            <Pressable
-              key={c}
-              style={[styles.chip, chain === c && styles.chipActive]}
-              onPress={() => vm.setChain(c)}
-            >
-              <Text style={[styles.chipText, chain === c && styles.chipTextActive]}>
-                {NetworkRegistry.get(c).symbol}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={styles.chipRow}>
+          {vm.chains.map(c => {
+            const active = chain === c
+            const hue = chainColors[c as ChainColorKey] ?? colors.border
+            return (
+              <Pressable
+                key={c}
+                style={[styles.chip, active && { backgroundColor: hue + "1f", borderColor: hue }]}
+                onPress={() => vm.setChain(c)}
+              >
+                <View style={[styles.chipDot, { backgroundColor: hue }]} />
+                <Text style={[styles.chipText, active && { color: colors.textPrimary }]}>
+                  {NetworkRegistry.get(c).symbol}
+                </Text>
+              </Pressable>
+            )
+          })}
+        </View>
 
         {state.status === "loading" && (
           <View style={styles.center}>
@@ -223,16 +231,16 @@ function HistoryChart({
     <View style={styles.card}>
       <Text style={styles.cardLabel}>24h base-fee history ({chain})</Text>
       <Svg width={width} height={height}>
-        <Rect x={0} y={0} width={width} height={height} fill="#F2F2F7" rx={6} />
+        <Rect x={0} y={0} width={width} height={height} fill={colors.elevation0} rx={6} />
         <Line
           x1={padding}
           x2={width - padding}
           y1={height - padding}
           y2={height - padding}
-          stroke="#D0D0D5"
+          stroke={colors.border}
           strokeWidth={1}
         />
-        <Polyline points={points} stroke="#007AFF" strokeWidth={2} fill="none" />
+        <Polyline points={points} stroke={colors.accent} strokeWidth={2} fill="none" />
       </Svg>
       <View style={styles.chartAxisRow}>
         <Text style={styles.chartAxis}>{formatShortTime(firstIso)}</Text>
@@ -304,65 +312,105 @@ function toEther(wei: bigint): string {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm
   },
-  back: { color: "#007AFF", fontSize: 14 },
-  refresh: { fontSize: 18 },
-  title: { fontSize: 18, fontWeight: "700" },
-  body: { padding: 16, gap: 12 },
-  chipRow: { gap: 8, paddingBottom: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 6, backgroundColor: "#F2F2F7", borderRadius: 16 },
-  chipActive: { backgroundColor: "#007AFF" },
-  chipText: { fontSize: 12, color: "#1C1C1E", fontWeight: "500" },
-  chipTextActive: { color: "#FFFFFF" },
+  back: { ...typography.monoLabelSm, color: colors.accentText },
+  refresh: { fontSize: 18, color: colors.accentText },
+  title: { ...typography.titleMd, color: colors.textPrimary },
+  body: { padding: spacing.lg, gap: spacing.md },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, paddingBottom: spacing.xs },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.full
+  },
+  chipDot: { width: 7, height: 7, borderRadius: radius.full },
+  chipText: { ...typography.monoLabelSm, color: colors.textSecondary },
   center: { padding: 32, alignItems: "center" },
-  error: { color: "#B00020", padding: 12, textAlign: "center" },
-  chart: { backgroundColor: "#F8F8FA", borderRadius: 12, padding: 12 },
-  chartLabel: { fontSize: 12, fontWeight: "600", opacity: 0.6, marginBottom: 8 },
-  chartBars: { flexDirection: "row", alignItems: "flex-end", gap: 4, height: 70 },
-  chartBar: { flex: 1, backgroundColor: "#007AFF", borderRadius: 2 },
-  tier: { backgroundColor: "#F8F8FA", borderRadius: 12, padding: 14, gap: 6 },
-  tierSelected: { borderWidth: 2, borderColor: "#007AFF" },
-  tierHeader: { flexDirection: "row", justifyContent: "space-between" },
-  tierLabel: { fontSize: 13, fontWeight: "700" },
-  tierCheck: { color: "#007AFF", fontSize: 16 },
+  error: { ...typography.bodyMd, color: colors.error, padding: spacing.md, textAlign: "center" },
+  chart: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md
+  },
+  chartLabel: { ...typography.labelXs, color: colors.textMuted, marginBottom: spacing.sm },
+  chartBars: { flexDirection: "row", alignItems: "flex-end", gap: 3, height: 70 },
+  chartBar: { flex: 1, backgroundColor: colors.accent, borderRadius: 2, opacity: 0.7 },
+  tier: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs
+  },
+  tierSelected: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accentGlow,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 3
+  },
+  tierHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  tierLabel: { ...typography.monoLabelSm, fontSize: 13, color: colors.textPrimary },
+  tierCheck: { color: colors.accent, fontSize: 16 },
   tierRow: { flexDirection: "row", justifyContent: "space-between" },
-  tierKey: { fontSize: 12, opacity: 0.6 },
-  tierVal: { fontSize: 12, fontFamily: "Courier" },
-  meta: { fontSize: 11, opacity: 0.5, textAlign: "center", marginTop: 4 },
+  tierKey: { ...typography.monoDataSm, color: colors.textMuted },
+  tierVal: { ...typography.monoDataSm, color: colors.textSecondary },
+  meta: { ...typography.monoDataSm, color: colors.textMuted, textAlign: "center", marginTop: spacing.xs },
   fallbackNote: {
-    fontSize: 11,
-    color: "#E65100",
-    backgroundColor: "#FFF3E0",
-    padding: 8,
-    borderRadius: 6,
+    ...typography.monoDataSm,
+    color: colors.accentWarm,
+    backgroundColor: colors.accentWarm + "14",
+    borderWidth: hairline,
+    borderColor: colors.accentWarm + "44",
+    padding: spacing.sm,
+    borderRadius: radius.sm,
     textAlign: "center"
   },
-  card: { backgroundColor: "#F8F8FA", borderRadius: 12, padding: 14, gap: 6 },
-  cardLabel: { fontSize: 12, fontWeight: "600", opacity: 0.6 },
-  limitRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
-  limitChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E0E0E0"
+  card: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs
   },
-  limitChipActive: { backgroundColor: "#007AFF", borderColor: "#007AFF" },
-  limitChipText: { fontSize: 12, fontWeight: "500" },
-  limitChipTextActive: { color: "#FFFFFF" },
-  usdValue: { fontSize: 28, fontWeight: "700" },
-  usdSub: { fontSize: 12, fontFamily: "Courier", opacity: 0.7 },
-  usdHint: { fontSize: 10, opacity: 0.55, marginTop: 4 },
-  chartAxisRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-  chartAxis: { fontSize: 10, opacity: 0.55 }
+  cardLabel: { ...typography.labelXs, color: colors.textMuted },
+  limitRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.xs },
+  limitChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.elevation2,
+    borderRadius: radius.full,
+    borderWidth: hairline,
+    borderColor: colors.border
+  },
+  limitChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  limitChipText: { ...typography.monoLabelSm, color: colors.textSecondary },
+  limitChipTextActive: { color: colors.onAccent },
+  usdValue: { ...typography.headlineLg, color: colors.textPrimary },
+  usdSub: { ...typography.monoDataSm, color: colors.textSecondary },
+  usdHint: { ...typography.monoDataSm, fontSize: 10, color: colors.textMuted, marginTop: spacing.xs },
+  chartAxisRow: { flexDirection: "row", justifyContent: "space-between", marginTop: spacing.xs },
+  chartAxis: { ...typography.monoDataSm, fontSize: 10, color: colors.textMuted }
 })
 
 export default GasOracleScreen

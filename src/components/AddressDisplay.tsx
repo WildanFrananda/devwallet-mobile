@@ -2,6 +2,7 @@ import { type JSX } from "react"
 import { View, Text, StyleSheet, Pressable, Alert } from "react-native"
 import Clipboard from "@react-native-clipboard/clipboard"
 import { truncateAddress } from "../utils/format"
+import { colors, typography, spacing, radius, hairline } from "../theme"
 
 type Props = {
   address: string
@@ -18,19 +19,46 @@ function AddressDisplay({ address, truncate = true, label }: Props): JSX.Element
   return (
     <View style={styles.row}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <Pressable onPress={copy}>
+      <Pressable style={styles.chip} onPress={copy}>
         <Text style={styles.address} selectable>
           {truncate ? truncateAddress(address, 10, 8) : address}
         </Text>
+        <Text style={styles.copy}>COPY</Text>
       </Pressable>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  row: { gap: 4 },
-  label: { fontSize: 11, opacity: 0.6, fontWeight: "600" },
-  address: { fontFamily: "Courier", fontSize: 13, color: "#0066CC" }
+  row: {
+    gap: spacing.xs
+  },
+  label: {
+    ...typography.monoLabelSm,
+    textTransform: "uppercase",
+    color: colors.textMuted
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+    borderColor: colors.border
+  },
+  address: {
+    ...typography.monoDataSm,
+    color: colors.textSecondary,
+    flex: 1
+  },
+  copy: {
+    ...typography.monoLabelSm,
+    color: colors.accentText,
+    marginLeft: spacing.sm
+  }
 })
 
 export default AddressDisplay

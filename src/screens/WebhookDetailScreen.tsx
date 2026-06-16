@@ -15,6 +15,18 @@ import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
 import WebhookDetailViewModel from "../viewmodels/WebhookDetailViewModel"
 import type { AppStackParamList } from "../navigation/AppNavigator"
 import WebhookLogItem from "../components/WebhookLogItem"
+import { NetworkRegistry } from "../core/constants/networks"
+import type { Chain } from "../core/constants/chains.enum"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline } from "../theme"
+
+function chainName(c: string): string {
+  try {
+    return NetworkRegistry.get(c as unknown as Chain).name
+  } catch {
+    return c
+  }
+}
 
 function WebhookDetailScreen(): JSX.Element {
   const vm = useViewModel(WebhookDetailViewModel)
@@ -44,12 +56,15 @@ function WebhookDetailScreen(): JSX.Element {
       style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       testID="webhook-detail-screen"
     >
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Pressable onPress={() => nav.goBack()}>
+        <Pressable onPress={() => nav.goBack()} hitSlop={8}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
-        <Text style={styles.title}>{webhook?.eventName() ?? "Webhook"}</Text>
-        <Pressable onPress={onDelete}>
+        <Text style={styles.title} numberOfLines={1}>
+          {webhook?.eventName() ?? "Webhook"}
+        </Text>
+        <Pressable onPress={onDelete} hitSlop={8}>
           <Text style={styles.headerDanger}>Delete</Text>
         </Pressable>
       </View>
@@ -65,7 +80,7 @@ function WebhookDetailScreen(): JSX.Element {
       >
         {webhook && (
           <View style={styles.metaBox}>
-            <MetaRow label="chain" value={webhook.chain} />
+            <MetaRow label="chain" value={chainName(webhook.chain)} />
             <MetaRow label="contract" value={webhook.contractAddress} mono />
             <MetaRow label="signature" value={webhook.eventSignature} mono />
             <MetaRow label="expires" value={webhook.expiresAt.toLocaleString()} />
@@ -104,33 +119,36 @@ function MetaRow({ label, value, mono }: { label: string; value: string; mono?: 
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm
   },
-  back: { color: "#007AFF", fontSize: 14 },
-  title: { fontSize: 16, fontWeight: "700", fontFamily: "Courier" },
-  headerDanger: { color: "#B00020", fontSize: 14, fontWeight: "600" },
-  body: { padding: 16, gap: 8 },
-  metaBox: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 12, gap: 4 },
-  metaRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  metaLabel: { fontSize: 11, fontWeight: "700", opacity: 0.55, width: 80 },
-  metaValue: { fontSize: 12, flexShrink: 1, textAlign: "right" },
-  mono: { fontFamily: "Courier" },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    opacity: 0.55,
-    textTransform: "uppercase",
-    marginTop: 10
+  back: { ...typography.monoLabelSm, color: colors.accentText },
+  title: { ...typography.monoDataSm, fontSize: 15, color: colors.textPrimary, flexShrink: 1, textAlign: "center" },
+  headerDanger: { ...typography.monoLabelSm, color: colors.error },
+  body: { padding: spacing.lg, gap: spacing.sm },
+  metaBox: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs
   },
+  metaRow: { flexDirection: "row", justifyContent: "space-between", gap: spacing.sm },
+  metaLabel: { ...typography.labelXs, color: colors.textMuted, width: 80 },
+  metaValue: { ...typography.monoDataSm, color: colors.textSecondary, flexShrink: 1, textAlign: "right" },
+  mono: { ...typography.monoDataSm, color: colors.textPrimary },
+  sectionLabel: { ...typography.labelXs, color: colors.textMuted, marginTop: spacing.sm },
   center: { padding: 24, alignItems: "center" },
-  empty: { textAlign: "center", opacity: 0.55, marginTop: 24 },
-  errorText: { color: "#B00020", padding: 8 }
+  empty: { ...typography.bodyMd, color: colors.textMuted, textAlign: "center", marginTop: 24 },
+  errorText: { ...typography.monoDataSm, color: colors.error, padding: spacing.sm }
 })
 
 export default WebhookDetailScreen

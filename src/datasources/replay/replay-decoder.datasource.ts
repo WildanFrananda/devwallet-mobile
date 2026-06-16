@@ -46,8 +46,16 @@ class ReplayDecoderDatasource {
     // Map origin to a Chain-like value for the log sink (we record under
     // the testnet pair for now so the user can find it in the inspector).
     const logChain: Chain = cfg.testnetPair
+    // Bounded timeout + retries: public mainnet RPCs advertise HTTP/3, and the
+    // iOS Simulator's QUIC stack can stall the first connection. A short
+    // per-attempt timeout lets the retry fall back to HTTP/2 instead of leaving
+    // the UI spinning forever. (Real devices don't hit this.)
     const client = createPublicClient({
-      transport: loggingTransport(http(cfg.rpcUrl), logChain, cfg.rpcUrl)
+      transport: loggingTransport(
+        http(cfg.rpcUrl, { timeout: 8_000, retryCount: 3, retryDelay: 500 }),
+        logChain,
+        cfg.rpcUrl
+      )
     })
 
     const tx = await client.getTransaction({ hash: txHash as Hex })

@@ -85,13 +85,26 @@ describe("RootViewModel", () => {
     if (state.status === "success") expect(state.data).toBe("unlock")
   })
 
-  it("auto-lock event flips route to unlock", async () => {
+  it("auto-lock event flips route to unlock when wallet still present", async () => {
     const { vm, lockedSubject } = makeStubs({ hasWallet: true, isUnlocked: true })
     vm.bootstrap()
     await flush()
     lockedSubject.next()
+    await flush()
     const state = vm.route$.value
     if (state.status === "success") expect(state.data).toBe("unlock")
+  })
+
+  it("lock after a wipe routes to onboarding (no wallet left)", async () => {
+    const { vm, lockedSubject, wallet } = makeStubs({ hasWallet: true, isUnlocked: true })
+    vm.bootstrap()
+    await flush()
+    // Simulate logout: credentials wiped, so the keychain no longer has a wallet.
+    wallet.hasWallet.mockResolvedValue(false)
+    lockedSubject.next()
+    await flush()
+    const state = vm.route$.value
+    if (state.status === "success") expect(state.data).toBe("onboarding")
   })
 
   it("enterApp() routes to app", () => {

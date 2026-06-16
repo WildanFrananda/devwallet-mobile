@@ -18,6 +18,8 @@ import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
 import NftGalleryViewModel from "../viewmodels/NftGalleryViewModel"
 import Nft from "../models/nft.model"
 import { Chain } from "../core/constants/chains.enum"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline, chainColors, type ChainColorKey } from "../theme"
 
 const COLUMN_COUNT = 2
 
@@ -34,12 +36,13 @@ function NftGalleryScreen(): JSX.Element {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Pressable onPress={() => nav.goBack()}>
+        <Pressable onPress={() => nav.goBack()} hitSlop={8}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>NFTs</Text>
-        <Pressable onPress={() => vm.refresh()}>
+        <Pressable onPress={() => vm.refresh()} hitSlop={8}>
           <Text style={styles.refresh}>↻</Text>
         </Pressable>
       </View>
@@ -70,8 +73,9 @@ function NftGalleryScreen(): JSX.Element {
 }
 
 function NftTile({ nft, onPress }: { nft: Nft; onPress: () => void }): JSX.Element {
+  const hue = chainColors[nft.chain as ChainColorKey] ?? colors.border
   return (
-    <Pressable style={styles.tile} onPress={onPress}>
+    <Pressable style={[styles.tile, { borderColor: hue + "33" }]} onPress={onPress}>
       <View style={styles.thumbWrap}>
         {nft.image ? (
           <Image source={{ uri: nft.image }} style={styles.thumb} resizeMode="cover" />
@@ -80,7 +84,9 @@ function NftTile({ nft, onPress }: { nft: Nft; onPress: () => void }): JSX.Eleme
             <Text style={styles.placeholderText}>?</Text>
           </View>
         )}
-        <Text style={styles.chainBadge}>{chainLabel(nft.chain)}</Text>
+        <View style={[styles.chainBadge, { backgroundColor: hue + "e6" }]}>
+          <Text style={styles.chainBadgeText}>{chainLabel(nft.chain)}</Text>
+        </View>
       </View>
       <Text style={styles.tileName} numberOfLines={1}>
         {nft.name}
@@ -172,57 +178,68 @@ function chainLabel(chain: Chain): string {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm
   },
-  back: { color: "#007AFF", fontSize: 14 },
-  refresh: { fontSize: 18 },
-  title: { fontSize: 18, fontWeight: "700" },
+  back: { ...typography.monoLabelSm, color: colors.accentText },
+  refresh: { fontSize: 18, color: colors.accentText },
+  title: { ...typography.titleMd, color: colors.textPrimary },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  errorText: { color: "#B00020", padding: 12, textAlign: "center" },
-  grid: { padding: 12, gap: 12 },
-  row: { gap: 12 },
-  tile: { flex: 1, backgroundColor: "#F8F8FA", borderRadius: 12, padding: 8 },
+  errorText: { ...typography.monoDataSm, color: colors.error, padding: spacing.md, textAlign: "center" },
+  grid: { padding: spacing.md, gap: spacing.md },
+  row: { gap: spacing.md },
+  tile: {
+    flex: 1,
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.sm
+  },
   thumbWrap: { position: "relative" },
-  thumb: { width: "100%", aspectRatio: 1, borderRadius: 8, backgroundColor: "#E0E0E0" },
+  thumb: { width: "100%", aspectRatio: 1, borderRadius: radius.md, backgroundColor: colors.elevation2 },
   placeholder: { alignItems: "center", justifyContent: "center" },
-  placeholderText: { fontSize: 32, color: "#999" },
+  placeholderText: { fontSize: 32, color: colors.textMuted },
   chainBadge: {
     position: "absolute",
     top: 6,
     left: 6,
-    fontSize: 10,
-    fontWeight: "700",
-    backgroundColor: "rgba(0,0,0,0.55)",
-    color: "#FFF",
-    paddingHorizontal: 6,
+    paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: 4,
-    overflow: "hidden"
+    borderRadius: radius.xs
   },
-  tileName: { fontSize: 13, fontWeight: "600", marginTop: 6 },
-  tileMeta: { fontSize: 11, opacity: 0.6 },
+  chainBadgeText: { ...typography.labelXs, fontSize: 10, color: colors.onAccent },
+  tileName: { ...typography.titleMd, fontSize: 13, color: colors.textPrimary, marginTop: spacing.xs },
+  tileMeta: { ...typography.monoDataSm, color: colors.textMuted },
   emptyBox: { padding: 32, alignItems: "center" },
-  emptyTitle: { fontSize: 16, fontWeight: "700" },
-  emptyBody: { fontSize: 13, opacity: 0.6, textAlign: "center", marginTop: 6 },
-  detailContainer: { flex: 1, backgroundColor: "#FFFFFF" },
-  detailHeader: { paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12 },
-  detailBody: { padding: 16, gap: 12 },
-  detailImage: { width: "100%", aspectRatio: 1, borderRadius: 12, backgroundColor: "#E0E0E0" },
-  detailName: { fontSize: 20, fontWeight: "700" },
-  detailCollection: { fontSize: 13, opacity: 0.65 },
-  detailDescription: { fontSize: 13, lineHeight: 18 },
-  detailMetaBox: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 12, gap: 4 },
-  metaRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  metaLabel: { fontSize: 11, fontWeight: "700", opacity: 0.55, width: 80 },
-  metaValue: { fontSize: 12, flexShrink: 1, textAlign: "right" },
-  mono: { fontFamily: "Courier" },
-  linkText: { fontSize: 13, color: "#007AFF", textAlign: "center", marginTop: 8 }
+  emptyTitle: { ...typography.titleMd, color: colors.textPrimary },
+  emptyBody: { ...typography.bodyMd, color: colors.textMuted, textAlign: "center", marginTop: spacing.xs },
+  detailContainer: { flex: 1, backgroundColor: colors.background },
+  detailHeader: { paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.sm },
+  detailBody: { padding: spacing.lg, gap: spacing.md },
+  detailImage: { width: "100%", aspectRatio: 1, borderRadius: radius.lg, backgroundColor: colors.elevation2 },
+  detailName: { ...typography.headlineLg, color: colors.textPrimary },
+  detailCollection: { ...typography.bodyMd, color: colors.textSecondary },
+  detailDescription: { ...typography.bodyMd, color: colors.textSecondary },
+  detailMetaBox: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs
+  },
+  metaRow: { flexDirection: "row", justifyContent: "space-between", gap: spacing.sm },
+  metaLabel: { ...typography.labelXs, color: colors.textMuted, width: 80 },
+  metaValue: { ...typography.monoDataSm, color: colors.textSecondary, flexShrink: 1, textAlign: "right" },
+  mono: { ...typography.monoDataSm, color: colors.textPrimary },
+  linkText: { ...typography.monoLabelSm, color: colors.accentText, textAlign: "center", marginTop: spacing.sm }
 })
 
 export default NftGalleryScreen

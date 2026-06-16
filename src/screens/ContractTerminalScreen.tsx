@@ -16,6 +16,17 @@ import ContractTerminalViewModel from "../viewmodels/ContractTerminalViewModel"
 import type Contract from "../models/contract.model"
 import type { ContractFunction } from "../models/contract.model"
 import { Chain } from "../core/constants/chains.enum"
+import { NetworkRegistry } from "../core/constants/networks"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline, chainColors, type ChainColorKey } from "../theme"
+
+function chainLabel(c: Chain): string {
+  try {
+    return NetworkRegistry.get(c).name
+  } catch {
+    return c
+  }
+}
 
 const SUPPORTED_CHAINS: ReadonlyArray<Chain> = [
   Chain.EVM_SEPOLIA,
@@ -35,13 +46,14 @@ function ContractTerminalScreen(): JSX.Element {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Pressable onPress={() => nav.goBack()}>
+        <Pressable onPress={() => nav.goBack()} hitSlop={8}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>Contract Terminal</Text>
-        <Pressable onPress={() => setAdding(prev => !prev)}>
-          <Text style={styles.headerAction}>{adding ? "Cancel" : "+ Add"}</Text>
+        <Pressable onPress={() => setAdding(prev => !prev)} hitSlop={8}>
+          <Text style={[styles.headerAction, adding && styles.headerActionCancel]}>{adding ? "Cancel" : "+ Add"}</Text>
         </Pressable>
       </View>
 
@@ -98,33 +110,40 @@ function AddContractForm({
     <View style={styles.form}>
       <Text style={styles.formTitle}>Add contract</Text>
 
-      <Text style={styles.label}>Chain</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-        {SUPPORTED_CHAINS.map(c => (
-          <Pressable
-            key={c}
-            style={[styles.chip, form.chain === c && styles.chipActive]}
-            onPress={() => vm.setAddField("chain", c)}
-          >
-            <Text style={[styles.chipText, form.chain === c && styles.chipTextActive]}>{c}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <Text style={styles.label}>CHAIN</Text>
+      <View style={styles.chipRow}>
+        {SUPPORTED_CHAINS.map(c => {
+          const active = form.chain === c
+          const hue = chainColors[c as ChainColorKey] ?? colors.border
+          return (
+            <Pressable
+              key={c}
+              style={[styles.chip, active && { backgroundColor: hue + "1f", borderColor: hue }]}
+              onPress={() => vm.setAddField("chain", c)}
+            >
+              <View style={[styles.chipDot, { backgroundColor: hue }]} />
+              <Text style={[styles.chipText, active && { color: colors.textPrimary }]}>{chainLabel(c)}</Text>
+            </Pressable>
+          )
+        })}
+      </View>
 
-      <Text style={styles.label}>Address</Text>
+      <Text style={styles.label}>ADDRESS</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.mono]}
         placeholder="0x…"
+        placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
         value={form.address}
         onChangeText={(v: string) => vm.setAddField("address", v)}
       />
 
-      <Text style={styles.label}>Display name (optional)</Text>
+      <Text style={styles.label}>DISPLAY NAME (OPTIONAL)</Text>
       <TextInput
         style={styles.input}
         placeholder="My Token"
+        placeholderTextColor={colors.textMuted}
         value={form.name}
         onChangeText={(v: string) => vm.setAddField("name", v)}
       />
@@ -133,6 +152,7 @@ function AddContractForm({
       <TextInput
         style={[styles.input, styles.abi]}
         placeholder='[{ "type": "function", "name": "...", "inputs": [...] }]'
+        placeholderTextColor={colors.textMuted}
         multiline
         autoCapitalize="none"
         autoCorrect={false}
@@ -158,13 +178,19 @@ function ContractRow({
   onSelect: () => void
   onDelete: () => void
 }): JSX.Element {
+  const hue = chainColors[contract.chain as ChainColorKey] ?? colors.border
   return (
-    <Pressable style={styles.row} onPress={onSelect} onLongPress={onDelete}>
-      <Text style={styles.rowName}>{contract.name}</Text>
+    <Pressable style={[styles.row, { borderColor: hue + "33" }]} onPress={onSelect} onLongPress={onDelete}>
+      <View style={styles.rowNameLine}>
+        <View style={[styles.chipDot, { backgroundColor: hue }]} />
+        <Text style={styles.rowName}>{contract.name}</Text>
+      </View>
       <Text style={styles.rowMeta}>
-        {contract.chain} · {contract.abiKind.toUpperCase()} · {contract.functions.length} fns
+        {chainLabel(contract.chain)} · {contract.abiKind.toUpperCase()} · {contract.functions.length} fns
       </Text>
-      <Text style={styles.rowAddr}>{contract.address}</Text>
+      <Text style={styles.rowAddr} numberOfLines={1}>
+        {contract.address}
+      </Text>
     </Pressable>
   )
 }
@@ -295,79 +321,141 @@ function FunctionRow({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm
   },
-  back: { color: "#007AFF", fontSize: 14 },
-  title: { fontSize: 18, fontWeight: "700" },
-  headerAction: { color: "#007AFF", fontSize: 14, fontWeight: "600" },
-  body: { padding: 16, gap: 12 },
-  empty: { textAlign: "center", opacity: 0.5, marginTop: 40 },
-  form: { gap: 8 },
-  formTitle: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
-  label: { fontSize: 12, fontWeight: "600", opacity: 0.6, marginTop: 8 },
+  back: { ...typography.monoLabelSm, color: colors.accentText },
+  title: { ...typography.titleMd, color: colors.textPrimary },
+  headerAction: { ...typography.monoLabelSm, color: colors.accentText },
+  headerActionCancel: { color: colors.textMuted },
+  body: { padding: spacing.lg, gap: spacing.md },
+  empty: { ...typography.bodyMd, color: colors.textMuted, textAlign: "center", marginTop: 40 },
+  form: { gap: spacing.sm },
+  formTitle: { ...typography.titleMd, color: colors.textPrimary, marginBottom: spacing.xs },
+  label: { ...typography.labelXs, color: colors.textMuted, marginTop: spacing.sm },
   input: {
-    backgroundColor: "#F2F2F7",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: 14,
+    letterSpacing: 0,
+    color: colors.textPrimary
   },
-  abi: { minHeight: 140, fontFamily: "Courier", fontSize: 12, textAlignVertical: "top" },
+  mono: { ...typography.monoDataSm, fontSize: 13, color: colors.textPrimary },
+  abi: { minHeight: 140, ...typography.monoDataSm, color: colors.textPrimary, textAlignVertical: "top" },
   primaryBtn: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
-    borderRadius: 10,
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
     alignItems: "center",
-    marginTop: 12
+    marginTop: spacing.md,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 4
   },
-  primaryBtnText: { color: "#FFFFFF", fontWeight: "600" },
-  errorText: { color: "#B00020" },
-  chipRow: { gap: 8, paddingVertical: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "#F2F2F7", borderRadius: 16 },
-  chipActive: { backgroundColor: "#007AFF" },
-  chipText: { fontSize: 11, color: "#1C1C1E" },
-  chipTextActive: { color: "#FFFFFF" },
-  row: { padding: 12, backgroundColor: "#F8F8FA", borderRadius: 10, gap: 4 },
-  rowName: { fontSize: 14, fontWeight: "600" },
-  rowMeta: { fontSize: 11, opacity: 0.6 },
-  rowAddr: { fontSize: 11, fontFamily: "Courier" },
-  detailTitle: { fontSize: 18, fontWeight: "700", marginTop: 12 },
-  detailMeta: { fontSize: 11, fontFamily: "Courier", opacity: 0.6, marginBottom: 12 },
-  fnBox: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 12, marginBottom: 12, gap: 8 },
-  fnHeader: { flexDirection: "row", justifyContent: "space-between" },
-  fnName: { fontSize: 14, fontWeight: "600", fontFamily: "Courier" },
-  fnTag: { fontSize: 10, fontWeight: "700", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  tagRead: { backgroundColor: "#E3F2FD", color: "#1976D2" },
-  tagWrite: { backgroundColor: "#FFF3E0", color: "#E65100" },
-  argRow: { gap: 4 },
-  argLabel: { fontSize: 11, opacity: 0.7 },
+  primaryBtnText: { ...typography.monoLabelSm, fontSize: 13, color: colors.onAccent },
+  errorText: { ...typography.monoDataSm, color: colors.error },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, paddingVertical: spacing.xs },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.full
+  },
+  chipDot: { width: 7, height: 7, borderRadius: radius.full },
+  chipText: { ...typography.monoLabelSm, color: colors.textSecondary },
+  row: {
+    padding: spacing.md,
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    gap: spacing.xxs
+  },
+  rowNameLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  rowName: { ...typography.titleMd, color: colors.textPrimary },
+  rowMeta: { ...typography.monoDataSm, color: colors.textMuted },
+  rowAddr: { ...typography.monoDataSm, color: colors.textSecondary },
+  detailTitle: { ...typography.headlineLg, color: colors.textPrimary, marginTop: spacing.md },
+  detailMeta: { ...typography.monoDataSm, color: colors.textMuted, marginBottom: spacing.md },
+  fnBox: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.sm
+  },
+  fnHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  fnName: { ...typography.monoDataSm, fontSize: 14, color: colors.textPrimary, flexShrink: 1 },
+  fnTag: {
+    ...typography.labelXs,
+    fontSize: 10,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.xs,
+    overflow: "hidden"
+  },
+  tagRead: { backgroundColor: colors.info + "26", color: colors.info },
+  tagWrite: { backgroundColor: colors.accentWarm + "26", color: colors.accentWarm },
+  argRow: { gap: spacing.xxs },
+  argLabel: { ...typography.monoDataSm, color: colors.textMuted },
   argInput: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    fontSize: 12,
-    fontFamily: "Courier"
+    backgroundColor: colors.elevation0,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    ...typography.monoDataSm,
+    color: colors.textPrimary
   },
-  runBtn: { paddingVertical: 8, borderRadius: 6, alignItems: "center" },
-  runRead: { backgroundColor: "#1976D2" },
-  runWrite: { backgroundColor: "#E65100" },
-  runText: { color: "#FFFFFF", fontWeight: "600" },
-  tabBar: { flexDirection: "row", marginTop: 12, marginBottom: 8, gap: 8 },
-  tab: { flex: 1, paddingVertical: 8, alignItems: "center", borderRadius: 8, backgroundColor: "#F2F2F7" },
-  tabActive: { backgroundColor: "#007AFF" },
-  tabText: { fontSize: 13, fontWeight: "600", color: "#1C1C1E" },
-  tabTextActive: { color: "#FFFFFF" },
-  outcomeBox: { padding: 12, backgroundColor: "#F2F2F7", borderRadius: 10, marginTop: 12, gap: 4 },
-  outcomeBoxError: { backgroundColor: "#FFE5E5" },
-  outcomeLabel: { fontSize: 11, fontWeight: "700", opacity: 0.6 },
-  outcomeValue: { fontSize: 13, fontFamily: "Courier" }
+  runBtn: { paddingVertical: spacing.sm, borderRadius: radius.md, alignItems: "center", marginTop: spacing.xs },
+  runRead: { backgroundColor: colors.info + "1f", borderWidth: hairline, borderColor: colors.info + "66" },
+  runWrite: { backgroundColor: colors.accentWarm + "1f", borderWidth: hairline, borderColor: colors.accentWarm + "66" },
+  runText: { ...typography.monoLabelSm, color: colors.textPrimary },
+  tabBar: { flexDirection: "row", marginTop: spacing.md, marginBottom: spacing.sm, gap: spacing.sm },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    backgroundColor: colors.elevation1
+  },
+  tabActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  tabText: { ...typography.monoLabelSm, color: colors.textSecondary },
+  tabTextActive: { color: colors.onAccent },
+  outcomeBox: {
+    padding: spacing.md,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    marginTop: spacing.md,
+    gap: spacing.xs
+  },
+  outcomeBoxError: { backgroundColor: colors.error + "14", borderColor: colors.error + "55" },
+  outcomeLabel: { ...typography.labelXs, color: colors.textMuted },
+  outcomeValue: { ...typography.monoDataSm, color: colors.textSecondary }
 })
 
 export default ContractTerminalScreen

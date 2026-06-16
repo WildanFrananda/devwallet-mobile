@@ -32,8 +32,14 @@ class RootViewModel extends ViewModel {
    */
   public bootstrap(thresholdMs?: number): void {
     this.autoLock.start(thresholdMs ?? this.settings.getAutoLockMs())
+    // A lock can mean "timed out" (wallet still present → unlock) OR "logged out"
+    // (credentials wiped → onboarding). Re-check the keychain so both land right.
     this.autoLock.locked$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this._route.value = UiState.success("unlock")
+      void this.launch(async signal => {
+        const stillHasWallet = await this.wallet.hasWallet()
+        if (signal.aborted) return
+        this._route.value = UiState.success(stillHasWallet ? "unlock" : "onboarding")
+      })
     })
     void this.push.registerWithBackend()
     this.push.subscribeTokenRefresh()

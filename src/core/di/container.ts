@@ -58,7 +58,11 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.SignerDatasource, SignerDatasource)
       getContainer.registerSingleton(Tokens.WalletRepository, WalletRepositoryImpl)
       getContainer.registerSingleton(Tokens.AutoLock, AutoLockService)
-      getContainer.registerSingleton(Tokens.FaucetDatasource, FaucetDatasource)
+      // HTTP-client datasources take an optional `base?: string` ctor arg (no
+      // @Injectable). tsyringe can't inject a primitive `string`, so resolving
+      // them as classes throws — which silently drops the whole VM to a non-DI
+      // `new VM()` with undefined deps. Register pre-built instances instead.
+      getContainer.registerInstance(Tokens.FaucetDatasource, new FaucetDatasource())
       getContainer.registerSingleton(Tokens.FeeDatasource, FeeDatasource)
       getContainer.registerSingleton(Tokens.RpcLogRepository, RpcLogRepositoryImpl)
       getContainer.registerSingleton(Tokens.ContractRepository, ContractRepositoryImpl)
@@ -70,7 +74,7 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.ReplayDecoderDatasource, ReplayDecoderDatasource)
       getContainer.registerSingleton(Tokens.ReplayExecutorDatasource, ReplayExecutorDatasource)
       getContainer.registerSingleton(Tokens.ReplayRepository, ReplayRepositoryImpl)
-      getContainer.registerSingleton(Tokens.WebhookDatasource, WebhookDatasource)
+      getContainer.registerInstance(Tokens.WebhookDatasource, new WebhookDatasource())
       getContainer.registerSingleton(Tokens.NftDatasource, NftDatasource)
 
       // E2E mock swap (Detox). `.env.e2e` sets E2E_MOCK=1; the Faucet + Webhook

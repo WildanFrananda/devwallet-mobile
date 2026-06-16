@@ -18,6 +18,8 @@ import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
 import { REPLAY_ORIGINS, REPLAY_TARGET_CHAINS, sourceFor } from "../core/constants/replay-sources"
 import type { ReplayOriginChain } from "../models/replay.model"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline, chainColors, type ChainColorKey } from "../theme"
 
 function TxReplayScreen(): JSX.Element {
   const vm = useViewModel(TxReplayViewModel)
@@ -47,8 +49,9 @@ function TxReplayScreen(): JSX.Element {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Pressable onPress={() => nav.goBack()}>
+        <Pressable onPress={() => nav.goBack()} hitSlop={8}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>TX Replay</Text>
@@ -56,8 +59,8 @@ function TxReplayScreen(): JSX.Element {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.sectionLabel}>Origin (mainnet, read-only)</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+        <Text style={styles.sectionLabel}>ORIGIN (MAINNET, READ-ONLY)</Text>
+        <View style={styles.chipRow}>
           {REPLAY_ORIGINS.map(o => (
             <Pressable
               key={o}
@@ -67,11 +70,12 @@ function TxReplayScreen(): JSX.Element {
               <Text style={[styles.chipText, origin === o && styles.chipTextActive]}>{o}</Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, styles.mono]}
           placeholder="0x… tx hash"
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           value={inputHash}
@@ -80,6 +84,7 @@ function TxReplayScreen(): JSX.Element {
         <TextInput
           style={[styles.input, styles.abi]}
           placeholder="Optional ABI JSON (improves decode for unknown contracts)"
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           multiline
@@ -101,25 +106,31 @@ function TxReplayScreen(): JSX.Element {
           <>
             <DecodedTxDisplay decoded={decoded.data} />
 
-            <Text style={styles.sectionLabel}>Replay target (testnet)</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              {REPLAY_TARGET_CHAINS.map(c => (
-                <Pressable
-                  key={c}
-                  style={[styles.chip, replayChain === c && styles.chipActive]}
-                  onPress={() => vm.setReplayChain(c)}
-                >
-                  <Text style={[styles.chipText, replayChain === c && styles.chipTextActive]}>
-                    {NetworkRegistry.get(c).symbol}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+            <Text style={styles.sectionLabel}>REPLAY TARGET (TESTNET)</Text>
+            <View style={styles.chipRow}>
+              {REPLAY_TARGET_CHAINS.map(c => {
+                const active = replayChain === c
+                const hue = chainColors[c as ChainColorKey] ?? colors.border
+                return (
+                  <Pressable
+                    key={c}
+                    style={[styles.chip, active && { backgroundColor: hue + "1f", borderColor: hue }]}
+                    onPress={() => vm.setReplayChain(c)}
+                  >
+                    <View style={[styles.chipDot, { backgroundColor: hue }]} />
+                    <Text style={[styles.chipText, active && { color: colors.textPrimary }]}>
+                      {NetworkRegistry.get(c).symbol}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
 
-            <Text style={styles.sectionLabel}>Value override (wei, default 0)</Text>
+            <Text style={styles.sectionLabel}>VALUE OVERRIDE (WEI, DEFAULT 0)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.mono]}
               keyboardType="number-pad"
+              placeholderTextColor={colors.textMuted}
               value={valueOverride}
               onChangeText={(v: string) => vm.setValueOverride(v)}
             />
@@ -199,69 +210,90 @@ function TxReplayScreen(): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm
   },
-  back: { color: "#007AFF", fontSize: 14 },
-  title: { fontSize: 18, fontWeight: "700" },
+  back: { ...typography.monoLabelSm, color: colors.accentText },
+  title: { ...typography.titleMd, color: colors.textPrimary },
   right: { width: 36 },
-  body: { padding: 16, gap: 8 },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    opacity: 0.55,
-    textTransform: "uppercase",
-    marginTop: 10
-  },
-  chipRow: { gap: 8, paddingVertical: 8 },
+  body: { padding: spacing.lg, gap: spacing.sm },
+  sectionLabel: { ...typography.labelXs, color: colors.textMuted, marginTop: spacing.sm },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, paddingVertical: spacing.xs },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#F2F2F7",
-    borderRadius: 16
-  },
-  chipActive: { backgroundColor: "#007AFF" },
-  chipText: { fontSize: 12, fontWeight: "500", color: "#1C1C1E", textTransform: "capitalize" },
-  chipTextActive: { color: "#FFFFFF" },
-  input: {
-    backgroundColor: "#F2F2F7",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14
-  },
-  abi: { minHeight: 100, fontFamily: "Courier", fontSize: 12, textAlignVertical: "top" },
-  primaryBtn: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
-    borderRadius: 10,
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 8
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.full
   },
-  primaryBtnText: { color: "#FFFFFF", fontWeight: "600" },
-  executeBtn: { backgroundColor: "#E65100" },
+  chipDot: { width: 7, height: 7, borderRadius: radius.full },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { ...typography.monoLabelSm, color: colors.textSecondary, textTransform: "capitalize" },
+  chipTextActive: { color: colors.onAccent },
+  input: {
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: 14,
+    letterSpacing: 0,
+    color: colors.textPrimary
+  },
+  mono: { ...typography.monoDataSm, fontSize: 13, color: colors.textPrimary },
+  abi: { minHeight: 100, ...typography.monoDataSm, color: colors.textPrimary, textAlignVertical: "top" },
+  primaryBtn: {
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    alignItems: "center",
+    marginTop: spacing.sm,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 4
+  },
+  primaryBtnText: { ...typography.monoLabelSm, fontSize: 13, color: colors.onAccent },
+  executeBtn: { backgroundColor: colors.accentWarm, shadowColor: colors.accentWarm },
   center: { padding: 24, alignItems: "center" },
-  errorText: { color: "#B00020", padding: 8 },
-  outcomeBox: { backgroundColor: "#E6F4EA", borderRadius: 10, padding: 12, gap: 4, marginTop: 8 },
-  outcomeLabel: { fontSize: 11, fontWeight: "700", opacity: 0.6 },
-  outcomeValue: { fontSize: 12, fontFamily: "Courier" },
-  explorerLink: { color: "#0066CC", fontSize: 12, marginTop: 4 },
-  muted: { fontSize: 12, opacity: 0.55, paddingVertical: 6 },
-  historyRow: {
-    backgroundColor: "#F8F8FA",
-    borderRadius: 10,
-    padding: 12,
-    gap: 4,
-    marginBottom: 8
+  errorText: { ...typography.monoDataSm, color: colors.error, padding: spacing.sm },
+  outcomeBox: {
+    backgroundColor: colors.successGlow,
+    borderWidth: hairline,
+    borderColor: colors.success + "55",
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.xs,
+    marginTop: spacing.sm
   },
-  historyFn: { fontSize: 13, fontWeight: "600", fontFamily: "Courier" },
-  historyHash: { fontSize: 11, fontFamily: "Courier", opacity: 0.6 },
-  historyMeta: { fontSize: 11, opacity: 0.55 }
+  outcomeLabel: { ...typography.labelXs, color: colors.textMuted },
+  outcomeValue: { ...typography.monoDataSm, color: colors.textSecondary },
+  explorerLink: { ...typography.monoLabelSm, color: colors.accentText, marginTop: spacing.xxs },
+  muted: { ...typography.monoDataSm, color: colors.textMuted, paddingVertical: spacing.xs },
+  historyRow: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xxs,
+    marginBottom: spacing.sm
+  },
+  historyFn: { ...typography.monoDataSm, fontSize: 13, color: colors.textPrimary },
+  historyHash: { ...typography.monoDataSm, color: colors.textMuted },
+  historyMeta: { ...typography.monoDataSm, color: colors.textMuted }
 })
 
 export default TxReplayScreen

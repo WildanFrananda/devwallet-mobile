@@ -92,7 +92,7 @@ describe("<FaucetChainCard />", () => {
         onRequest={onRequest}
       />
     )
-    expect(getByText(/Try again in/)).toBeTruthy()
+    expect(getByText(/retry in/i)).toBeTruthy()
     const btn = getByTestId("faucet.row.sepolia.request")
     expect(btn).toBeDisabled()
     fireEvent.press(btn)

@@ -2,10 +2,28 @@ import { useEffect, useState, type JSX } from "react"
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
+import Svg, { Path } from "react-native-svg"
 import FaucetViewModel from "../viewmodels/FaucetViewModel"
 import FaucetChainCard from "../components/FaucetChainCard"
+import DotGridBackground from "../components/DotGridBackground"
 import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
+import { colors, typography, spacing, radius, hairline } from "../theme"
+
+/** Droplet glyph — testnet funds, one tap. */
+function DropletIcon({ color }: { color: string }): JSX.Element {
+  return (
+    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 3.5c3.2 4 6 6.9 6 10.2a6 6 0 1 1-12 0C6 10.4 8.8 7.5 12 3.5Z"
+        stroke={color}
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
 
 /** Ticks every `intervalMs` so rate-limit countdowns re-render live. */
 function useNow(intervalMs: number): number {
@@ -54,34 +72,41 @@ function FaucetScreen(): JSX.Element {
   const addressMap = addresses.status === "success" ? addresses.data : {}
 
   return (
-    <View
-      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
-      testID="faucet-screen"
-    >
+    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]} testID="faucet-screen">
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <Text style={styles.title}>Faucet</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.eyebrow}>TESTNET FUNDS · 8 CHAINS</Text>
+          <Text style={styles.title}>Faucet</Text>
+          <Text style={styles.subtitle}>Drip testnet tokens to every address — one tap.</Text>
+        </View>
         <Pressable
           testID="faucet.request-all"
           style={[styles.requestAllBtn, addresses.status !== "success" && styles.requestAllBtnDisabled]}
           onPress={() => vm.requestAll()}
           disabled={addresses.status !== "success"}
         >
-          <Text style={styles.requestAllLabel}>Request all</Text>
+          <DropletIcon color={colors.onAccent} />
+          <Text style={styles.requestAllLabel}>All</Text>
         </Pressable>
       </View>
 
-      {addressError && <Text style={styles.error}>{addressError}</Text>}
+      {addressError && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{addressError}</Text>
+        </View>
+      )}
 
       {isLoadingAddresses ? (
         <View style={styles.center}>
-          <ActivityIndicator />
+          <ActivityIndicator color={colors.accent} />
         </View>
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => vm.initialize(0)} />}
         >
-          {ROW_ORDER.map(chain => (
+          {ROW_ORDER.map((chain, i) => (
             <FaucetChainCard
               key={chain}
               cfg={NetworkRegistry.get(chain)}
@@ -89,6 +114,7 @@ function FaucetScreen(): JSX.Element {
               row={rows[chain]}
               now={now}
               slug={TESTID_SLUG[chain]}
+              index={i}
               onRequest={() => vm.requestSingle(chain)}
             />
           ))}
@@ -99,26 +125,83 @@ function FaucetScreen(): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F8F8FA" },
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background
+  },
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12
+    alignItems: "flex-start",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm
   },
-  title: { fontSize: 24, fontWeight: "700" },
+  headerText: {
+    flex: 1,
+    gap: spacing.xs
+  },
+  eyebrow: {
+    ...typography.labelXs,
+    color: colors.textMuted
+  },
+  title: {
+    ...typography.headlineLg,
+    color: colors.textPrimary
+  },
+  subtitle: {
+    ...typography.bodyMd,
+    color: colors.textSecondary,
+    maxWidth: 240
+  },
   requestAllBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: "#007AFF",
-    borderRadius: 8
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.accent,
+    borderRadius: radius.full,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 3
   },
-  requestAllBtnDisabled: { backgroundColor: "#A8C7FA" },
-  requestAllLabel: { color: "#FFFFFF", fontWeight: "600", fontSize: 13 },
-  list: { padding: 16, gap: 10 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  error: { color: "#B00020", paddingHorizontal: 20, paddingVertical: 8, textAlign: "center" }
+  requestAllBtnDisabled: {
+    opacity: 0.4,
+    shadowOpacity: 0
+  },
+  requestAllLabel: {
+    ...typography.monoLabelSm,
+    color: colors.onAccent
+  },
+  list: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xl,
+    gap: spacing.md
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  errorBox: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.error,
+    backgroundColor: colors.surface
+  },
+  errorText: {
+    ...typography.bodyMd,
+    color: colors.error,
+    textAlign: "center"
+  }
 })
 
 export default FaucetScreen

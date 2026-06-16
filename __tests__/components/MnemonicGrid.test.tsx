@@ -11,7 +11,8 @@ describe("<MnemonicGrid />", () => {
     const { getAllByText, getByText } = render(<MnemonicGrid words={words} />)
     expect(getAllByText("test")).toHaveLength(11)
     expect(getByText("junk")).toBeTruthy()
-    expect(getByText("1")).toBeTruthy()
+    // Indices are zero-padded to 2 digits ("01".."12") for a code-listing look.
+    expect(getByText("01")).toBeTruthy()
     expect(getByText("12")).toBeTruthy()
   })
 

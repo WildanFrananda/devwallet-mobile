@@ -6,7 +6,8 @@ import {
   ViewModel,
   type ReadOnlyStateFlow
 } from "react-native-mobile-mvvm"
-import { parseEther } from "viem"
+import { parseUnits } from "viem"
+import { NetworkRegistry } from "../core/constants/networks"
 import WalletRepository from "../repositories/wallet.repository"
 import FeeDatasource from "../datasources/fee/fee.datasource"
 import GasRepository from "../repositories/gas.repository"
@@ -120,7 +121,10 @@ class SendViewModel extends ViewModel {
 
     let raw: bigint
     try {
-      raw = parseEther(this._amount.value.trim())
+      // Parse against the chain's own decimals — NOT a hardcoded 18. Bitcoin is
+      // 8 (sats), Solana 9 (lamports), etc. parseEther always assumed 18, which
+      // over-scaled every non-EVM amount by orders of magnitude.
+      raw = parseUnits(this._amount.value.trim(), NetworkRegistry.get(chain).decimals)
     } catch {
       this._state.value = UiState.error("Invalid amount")
       return

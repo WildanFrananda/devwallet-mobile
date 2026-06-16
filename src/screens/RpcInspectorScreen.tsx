@@ -20,6 +20,8 @@ import RpcInspectorViewModel, {
 import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
 import type RpcLog from "../models/rpc-log.model"
+import DotGridBackground from "../components/DotGridBackground"
+import { colors, typography, spacing, radius, hairline, chainColors, type ChainColorKey } from "../theme"
 
 const CHAIN_OPTIONS: ReadonlyArray<{ value: ChainFilter; label: string }> = [
   { value: "all", label: "All" },
@@ -76,23 +78,27 @@ function RpcInspectorScreen(): JSX.Element {
       style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       testID="rpc-inspector-screen"
     >
+      <DotGridBackground />
       <View style={styles.headerBar}>
-        <View>
+        <View style={styles.headerText}>
+          <Text style={styles.eyebrow}>DEVKIT · RPC</Text>
           <Text style={styles.title}>RPC Inspector</Text>
           <Text style={styles.subtitle}>
             {logs.length} / {count} entries
           </Text>
         </View>
         <Pressable style={styles.mockChip} onPress={() => setMocksOpen(true)}>
+          <View style={styles.mockChipDot} />
           <Text style={styles.mockChipText}>Mocks · {mocks.length}</Text>
         </Pressable>
       </View>
 
       <View style={styles.searchRow}>
+        <Text style={styles.searchIcon}>⌕</Text>
         <TextInput
           style={styles.search}
-          placeholder="Filter method, endpoint, params…"
-          placeholderTextColor="#999"
+          placeholder="Filter method or endpoint…"
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           value={searchQuery}
@@ -100,7 +106,7 @@ function RpcInspectorScreen(): JSX.Element {
         />
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+      <View style={styles.chainRow}>
         {CHAIN_OPTIONS.map(opt => (
           <Pressable
             key={opt.value}
@@ -110,9 +116,9 @@ function RpcInspectorScreen(): JSX.Element {
             <Text style={[styles.chipText, chainFilter === opt.value && styles.chipTextActive]}>{opt.label}</Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+      <View style={styles.statusRow}>
         {STATUS_OPTIONS.map(opt => (
           <Pressable
             key={opt.value}
@@ -122,7 +128,7 @@ function RpcInspectorScreen(): JSX.Element {
             <Text style={[styles.chipText, statusFilter === opt.value && styles.chipTextActive]}>{opt.label}</Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
       <View style={styles.actionRow}>
         <Pressable style={styles.actionBtn} onPress={() => void onExport()}>
@@ -206,6 +212,7 @@ function LogRow({
     }
   }, [log.chain])
   const hasMockForMethod = mockMethods.includes(log.method)
+  const hue = chainColors[log.chain as ChainColorKey] ?? colors.border
   return (
     <Pressable
       testID={`rpc-inspector.log-row.${index}`}
@@ -215,6 +222,7 @@ function LogRow({
     >
       <View style={styles.rowHeader}>
         <View style={styles.rowMethodWrap}>
+          <View style={[styles.chainDot, { backgroundColor: hue }]} />
           <Text style={styles.rowMethod}>{log.method}</Text>
           {log.mocked && <Text style={styles.badgeMocked}>MOCKED</Text>}
           {!log.mocked && hasMockForMethod && <Text style={styles.badgeMockReady}>MOCK SET</Text>}
@@ -289,7 +297,7 @@ function MockPromptModal({
             value={draft}
             onChangeText={setDraft}
             placeholder='e.g. "0x1234" or { "result": "ok" }'
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
             multiline
@@ -405,143 +413,216 @@ function ReplayOutcomeBanner({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: colors.background },
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm
+  },
+  headerText: { flex: 1, gap: spacing.xxs },
+  eyebrow: { ...typography.labelXs, color: colors.textMuted },
+  title: { ...typography.headlineLg, color: colors.textPrimary },
+  subtitle: { ...typography.monoDataSm, color: colors.textMuted },
+  mockChip: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.accentWarm + "1a",
+    borderWidth: hairline,
+    borderColor: colors.accentWarm + "55",
+    borderRadius: radius.full
   },
-  title: { fontSize: 20, fontWeight: "700" },
-  subtitle: { fontSize: 12, opacity: 0.6, marginTop: 2 },
-  mockChip: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "#FFF3E0", borderRadius: 14 },
-  mockChipText: { fontSize: 12, fontWeight: "600", color: "#E65100" },
-  searchRow: { paddingHorizontal: 20, paddingBottom: 8 },
+  mockChipDot: { width: 6, height: 6, borderRadius: radius.full, backgroundColor: colors.accentWarm },
+  mockChipText: { ...typography.monoLabelSm, color: colors.accentWarm },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.md
+  },
+  searchIcon: { fontSize: 16, color: colors.textMuted },
   search: {
-    backgroundColor: "#F2F2F7",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14
+    // System (proportional) font + letterSpacing 0: a monospace or any inherited
+    // tracking makes plain-English placeholders read as stretched/"melar".
+    flex: 1,
+    paddingVertical: spacing.sm,
+    fontSize: 14,
+    letterSpacing: 0,
+    color: colors.textPrimary
   },
-  chipRow: { paddingHorizontal: 20, gap: 8, paddingBottom: 8 },
+  chainRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm
+  },
+  statusRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm
+  },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#F2F2F7",
-    borderRadius: 16
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.elevation1,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.full
   },
-  chipActive: { backgroundColor: "#007AFF" },
-  chipText: { fontSize: 12, fontWeight: "500", color: "#1C1C1E" },
-  chipTextActive: { color: "#FFFFFF" },
-  actionRow: { flexDirection: "row", paddingHorizontal: 20, gap: 12, paddingBottom: 8 },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { ...typography.monoLabelSm, letterSpacing: 0.3, color: colors.textSecondary },
+  chipTextActive: { color: colors.onAccent },
+  actionRow: { flexDirection: "row", paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
   actionBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: "#007AFF",
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    backgroundColor: colors.elevation1,
     alignItems: "center"
   },
-  actionBtnDanger: { backgroundColor: "#FFE5E5" },
-  actionText: { color: "#FFFFFF", fontWeight: "600" },
-  actionTextDanger: { color: "#B00020", fontWeight: "600" },
-  list: { padding: 20, gap: 8 },
-  row: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 12 },
-  rowError: { borderLeftWidth: 3, borderLeftColor: "#B00020" },
-  rowMocked: { backgroundColor: "#FFF8E1" },
+  actionBtnDanger: { borderColor: colors.error + "55", backgroundColor: colors.error + "14" },
+  actionText: { ...typography.monoLabelSm, color: colors.accentText },
+  actionTextDanger: { ...typography.monoLabelSm, color: colors.error },
+  list: { padding: spacing.lg, gap: spacing.sm },
+  row: {
+    backgroundColor: colors.elevation1,
+    borderRadius: radius.lg,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.md
+  },
+  rowError: { borderLeftWidth: 3, borderLeftColor: colors.error },
+  rowMocked: { borderColor: colors.accentWarm + "55", backgroundColor: colors.accentWarm + "0d" },
   rowHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  rowMethodWrap: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
-  rowMethod: { fontSize: 14, fontWeight: "600", fontFamily: "Courier" },
+  rowMethodWrap: { flexDirection: "row", alignItems: "center", gap: spacing.xs, flexShrink: 1 },
+  chainDot: { width: 7, height: 7, borderRadius: radius.full },
+  rowMethod: { ...typography.monoDataSm, fontSize: 13, color: colors.textPrimary, flexShrink: 1 },
   badgeMocked: {
+    ...typography.labelXs,
     fontSize: 9,
-    fontWeight: "700",
-    color: "#E65100",
-    backgroundColor: "#FFE0B2",
-    paddingHorizontal: 4,
+    color: colors.accentWarm,
+    backgroundColor: colors.accentWarm + "26",
+    paddingHorizontal: spacing.xs,
     paddingVertical: 1,
-    borderRadius: 3,
+    borderRadius: radius.xs,
     overflow: "hidden"
   },
   badgeMockReady: {
+    ...typography.labelXs,
     fontSize: 9,
-    fontWeight: "700",
-    color: "#1976D2",
-    backgroundColor: "#E3F2FD",
-    paddingHorizontal: 4,
+    color: colors.info,
+    backgroundColor: colors.info + "26",
+    paddingHorizontal: spacing.xs,
     paddingVertical: 1,
-    borderRadius: 3,
+    borderRadius: radius.xs,
     overflow: "hidden"
   },
-  rowStatus: { fontSize: 11, fontWeight: "600" },
-  statusOk: { color: "#34C759" },
-  statusErr: { color: "#B00020" },
-  rowMeta: { fontSize: 11, opacity: 0.6, marginTop: 2 },
-  detail: { marginTop: 8, gap: 4 },
-  detailLabel: { fontSize: 10, fontWeight: "700", opacity: 0.6, marginTop: 4 },
-  detailValue: { fontSize: 12, fontFamily: "Courier" },
-  detailActions: { flexDirection: "row", gap: 8, marginTop: 8 },
+  rowStatus: { ...typography.monoLabelSm, fontSize: 11 },
+  statusOk: { color: colors.success },
+  statusErr: { color: colors.error },
+  rowMeta: { ...typography.monoDataSm, color: colors.textMuted, marginTop: spacing.xxs },
+  detail: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: hairline,
+    borderTopColor: colors.border
+  },
+  detailLabel: { ...typography.labelXs, color: colors.textMuted, marginTop: spacing.xs },
+  detailValue: { ...typography.monoDataSm, color: colors.textSecondary },
+  detailActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
   detailBtn: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 6,
-    backgroundColor: "#1C1C1E",
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    backgroundColor: colors.elevation2,
     alignItems: "center"
   },
-  detailBtnText: { color: "#FFFFFF", fontSize: 12, fontWeight: "600" },
-  empty: { textAlign: "center", opacity: 0.5, marginTop: 40 },
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  detailBtnText: { ...typography.monoLabelSm, color: colors.accentText },
+  empty: { ...typography.bodyMd, color: colors.textMuted, textAlign: "center", marginTop: 40 },
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
   modalBody: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 20,
+    backgroundColor: colors.elevation2,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    padding: spacing.lg,
     paddingBottom: 36,
-    gap: 12
+    gap: spacing.md
   },
-  modalTitle: { fontSize: 16, fontWeight: "700" },
-  modalHint: { fontSize: 12, opacity: 0.6 },
+  modalTitle: { ...typography.titleMd, color: colors.textPrimary },
+  modalHint: { ...typography.bodyMd, color: colors.textSecondary },
   modalInput: {
-    backgroundColor: "#F2F2F7",
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: colors.elevation0,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
     minHeight: 120,
-    fontFamily: "Courier",
-    fontSize: 12,
+    ...typography.monoDataSm,
+    color: colors.textPrimary,
     textAlignVertical: "top"
   },
-  modalActions: { flexDirection: "row", gap: 8, justifyContent: "flex-end" },
-  modalBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: "#F2F2F7" },
-  modalBtnPrimary: { backgroundColor: "#007AFF" },
-  modalBtnDanger: { backgroundColor: "#FFE5E5" },
-  modalBtnText: { fontSize: 13, fontWeight: "600" },
-  modalBtnTextPrimary: { fontSize: 13, fontWeight: "600", color: "#FFFFFF" },
-  modalBtnTextDanger: { fontSize: 13, fontWeight: "600", color: "#B00020" },
+  modalActions: { flexDirection: "row", gap: spacing.sm, justifyContent: "flex-end" },
+  modalBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: colors.border,
+    backgroundColor: colors.elevation1
+  },
+  modalBtnPrimary: { backgroundColor: colors.accent, borderColor: colors.accent },
+  modalBtnDanger: { backgroundColor: colors.error + "14", borderColor: colors.error + "55" },
+  modalBtnText: { ...typography.monoLabelSm, color: colors.textSecondary },
+  modalBtnTextPrimary: { ...typography.monoLabelSm, color: colors.onAccent },
+  modalBtnTextDanger: { ...typography.monoLabelSm, color: colors.error },
   mockList: { maxHeight: 280 },
   mockRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-    gap: 8
+    paddingVertical: spacing.sm,
+    borderBottomWidth: hairline,
+    borderBottomColor: colors.border,
+    gap: spacing.sm
   },
-  mockRowText: { flex: 1, gap: 2 },
-  mockMethod: { fontSize: 13, fontWeight: "600", fontFamily: "Courier" },
-  mockResponse: { fontSize: 11, opacity: 0.6, fontFamily: "Courier" },
-  mockDelete: { fontSize: 18, color: "#B00020", paddingHorizontal: 6 },
+  mockRowText: { flex: 1, gap: spacing.xxs },
+  mockMethod: { ...typography.monoDataSm, fontSize: 13, color: colors.textPrimary },
+  mockResponse: { ...typography.monoDataSm, color: colors.textMuted },
+  mockDelete: { fontSize: 18, color: colors.error, paddingHorizontal: spacing.xs },
   replayBanner: {
     position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 16,
-    padding: 14,
-    borderRadius: 10
+    left: spacing.lg,
+    right: spacing.lg,
+    bottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: hairline
   },
-  replayBannerOk: { backgroundColor: "#E6F4EA" },
-  replayBannerErr: { backgroundColor: "#FFE5E5" },
-  replayBannerLabel: { fontSize: 11, fontWeight: "700" },
-  replayBannerValue: { fontSize: 12, fontFamily: "Courier", marginTop: 4 }
+  replayBannerOk: { backgroundColor: colors.successGlow, borderColor: colors.success + "55" },
+  replayBannerErr: { backgroundColor: colors.error + "14", borderColor: colors.error + "55" },
+  replayBannerLabel: { ...typography.monoLabelSm, color: colors.textPrimary },
+  replayBannerValue: { ...typography.monoDataSm, color: colors.textSecondary, marginTop: spacing.xxs }
 })
 
 export default RpcInspectorScreen
