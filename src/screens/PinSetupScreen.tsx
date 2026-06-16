@@ -31,7 +31,10 @@ function PinSetupScreen({ onDone, title = "Create PIN" }: Props): JSX.Element {
   const errorMessage = save.status === "error" ? save.message : null
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID={isCreate ? "pin-setup-screen" : "pin-confirm-screen"}
+    >
       <View style={styles.container}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
@@ -44,10 +47,16 @@ function PinSetupScreen({ onDone, title = "Create PIN" }: Props): JSX.Element {
           maxLength={6}
           secureTextEntry
           autoFocus
+          testID={isCreate ? "pin-setup.input" : "pin-confirm.input"}
         />
         {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
         {save.status === "loading" && <ActivityIndicator />}
-        <Button title={primaryLabel} onPress={onPrimary} disabled={primaryDisabled} />
+        <Button
+          testID={isCreate ? "pin-setup.continue" : "pin-confirm.continue"}
+          title={primaryLabel}
+          onPress={onPrimary}
+          disabled={primaryDisabled}
+        />
         {!isCreate && <Button title="Back" onPress={() => vm.back()} />}
       </View>
     </View>

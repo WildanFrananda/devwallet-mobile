@@ -17,10 +17,26 @@ const Tab = createBottomTabNavigator<TabParamList>()
 function TabNavigator(): JSX.Element {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="Wallet" component={DashboardScreen} />
-      <Tab.Screen name="Faucet" component={FaucetScreen} />
-      <Tab.Screen name="Tools" component={ToolsScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen
+        name="Wallet"
+        component={DashboardScreen}
+        options={{ tabBarButtonTestID: "nav.tab.wallet" }}
+      />
+      <Tab.Screen
+        name="Faucet"
+        component={FaucetScreen}
+        options={{ tabBarButtonTestID: "nav.tab.faucet" }}
+      />
+      <Tab.Screen
+        name="Tools"
+        component={ToolsScreen}
+        options={{ tabBarButtonTestID: "nav.tab.tools" }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ tabBarButtonTestID: "nav.tab.settings" }}
+      />
     </Tab.Navigator>
   )
 }

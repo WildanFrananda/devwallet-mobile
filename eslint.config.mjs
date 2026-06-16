@@ -15,7 +15,8 @@ export default tseslint.config(
       "ios/",
       ".bundle/",
       "vendor/",
-      "coverage/"
+      "coverage/",
+      "e2e/"
     ]
   },
   eslint.configs.recommended,
@@ -93,7 +94,12 @@ export default tseslint.config(
   {
     files: ["**/*.spec.ts", "**/*.test.ts", "test/**/*.ts", "e2e/**/*.ts", "**/*.spec.tsx", "**/*.test.tsx"],
     rules: {
-      "@typescript-eslint/unbound-method": "off"
+      "@typescript-eslint/unbound-method": "off",
+      "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unnecessary-type-assertion": "off",
+      "indent": "off"
     }
   },
   {

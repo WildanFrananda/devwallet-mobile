@@ -53,7 +53,11 @@ function TxHistoryScreen(): JSX.Element {
           </View>
           <View style={styles.headerActions}>
             <Button title="Receive" onPress={() => nav.navigate("Receive", { chain, address })} />
-            <Button title="Send" onPress={() => nav.navigate("Send", { chain, fromAddress: address })} />
+            <Button
+              testID="tx-history.send"
+              title="Send"
+              onPress={() => nav.navigate("Send", { chain, fromAddress: address })}
+            />
           </View>
         </View>
       </View>

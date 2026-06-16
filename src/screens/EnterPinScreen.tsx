@@ -24,7 +24,10 @@ function EnterPinScreen({ onUnlocked, onCancel }: Props): JSX.Element {
   const lockSeconds = Math.ceil(lockoutMs / 1000)
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID="unlock-screen"
+    >
       <View style={styles.container}>
         <Text style={styles.title}>Enter PIN</Text>
         <Text style={styles.subtitle}>6-digit PIN to unlock the wallet.</Text>
@@ -38,6 +41,7 @@ function EnterPinScreen({ onUnlocked, onCancel }: Props): JSX.Element {
           secureTextEntry
           editable={!isLocked}
           autoFocus
+          testID="unlock.pin-input"
         />
         {isLocked && (
           <Text style={styles.lockout}>Too many wrong attempts. Try again in {lockSeconds}s.</Text>
@@ -48,6 +52,7 @@ function EnterPinScreen({ onUnlocked, onCancel }: Props): JSX.Element {
         {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
         {state.status === "loading" && <ActivityIndicator />}
         <Button
+          testID="unlock.submit"
           title={state.status === "loading" ? "Unlocking..." : "Unlock"}
           onPress={() => vm.submit()}
           disabled={state.status === "loading" || isLocked || pin.length !== 6}

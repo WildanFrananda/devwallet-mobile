@@ -1,6 +1,11 @@
 # devwallet-mobile
 
+[![CI](https://github.com/WildanFrananda/devwallet-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/WildanFrananda/devwallet-mobile/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/WildanFrananda/devwallet-mobile/branch/main/graph/badge.svg)](https://codecov.io/gh/WildanFrananda/devwallet-mobile)
+
 React Native app for [DevWallet](https://github.com/WildanFrananda) — multi-chain testnet wallet. All key derivation + signing happens **on-device**. Backend is hit only for orchestration (faucet jobs, webhooks, network config).
+
+> Testing: [docs/TESTING.md](docs/TESTING.md) · E2E setup: [e2e/README.md](e2e/README.md)
 
 ## Stack
 

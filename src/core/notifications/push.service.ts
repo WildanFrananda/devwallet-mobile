@@ -54,6 +54,11 @@ class PushService {
   }
 
   private async ensureAuthorized(): Promise<boolean> {
+    // E2E builds: never raise the OS notification permission dialog — it would
+    // overlay the screen and block Detox. iOS pre-grants via launchApp
+    // permissions; Android (no launchApp permission support) relies on this
+    // short-circuit. Push is non-essential, so treating it as authorized is safe.
+    if (Config.E2E_MOCK === "1") return true
     if (Platform.OS === "android") {
       // Android requires runtime permission only on SDK 33+. RN Firebase
       // handles the prompt via requestPermission too.

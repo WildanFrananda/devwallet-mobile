@@ -1,4 +1,4 @@
-import { type JSX } from "react"
+import { useCallback, type JSX } from "react"
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { useNavigation } from "@react-navigation/native"
+import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
 import WebhookListViewModel from "../viewmodels/WebhookListViewModel"
@@ -27,11 +27,22 @@ function WebhookListScreen(): JSX.Element {
 
   useInit(() => vm.refresh())
 
+  // Refresh on every focus so a webhook just created (then navigated back to)
+  // appears without a manual pull-to-refresh.
+  useFocusEffect(
+    useCallback(() => {
+      vm.refresh()
+    }, [vm])
+  )
+
   const list = state.status === "success" ? state.data : []
   const showPulse = lastEventAt > 0 && Date.now() - lastEventAt < 3_000
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID="webhook-list-screen"
+    >
       <View style={styles.headerBar}>
         <Pressable onPress={() => nav.goBack()}>
           <Text style={styles.back}>‹ Back</Text>
@@ -40,7 +51,7 @@ function WebhookListScreen(): JSX.Element {
           <Text style={styles.title}>Webhooks</Text>
           {showPulse && <View style={styles.pulseDot} />}
         </View>
-        <Pressable onPress={() => nav.navigate("WebhookCreate")}>
+        <Pressable testID="webhook-list.add" onPress={() => nav.navigate("WebhookCreate")}>
           <Text style={styles.headerAction}>+ Add</Text>
         </Pressable>
       </View>
@@ -62,9 +73,10 @@ function WebhookListScreen(): JSX.Element {
             No webhooks. Tap “+ Add” to subscribe to a contract event.
           </Text>
         )}
-        {list.map(w => (
+        {list.map((w, index) => (
           <WebhookRow
             key={w.id}
+            index={index}
             webhook={w}
             onPress={() => nav.navigate("WebhookDetail", { webhook: w })}
           />
@@ -74,9 +86,17 @@ function WebhookListScreen(): JSX.Element {
   )
 }
 
-function WebhookRow({ webhook, onPress }: { webhook: Webhook; onPress: () => void }): JSX.Element {
+function WebhookRow({
+  webhook,
+  index,
+  onPress
+}: {
+  webhook: Webhook
+  index: number
+  onPress: () => void
+}): JSX.Element {
   return (
-    <Pressable style={styles.row} onPress={onPress}>
+    <Pressable testID={`webhook-list.row.${index}`} style={styles.row} onPress={onPress}>
       <Text style={styles.rowEvent}>{webhook.eventName()}</Text>
       <Text style={styles.rowMeta}>
         {webhook.chain} · {webhook.contractAddress.slice(0, 10)}…

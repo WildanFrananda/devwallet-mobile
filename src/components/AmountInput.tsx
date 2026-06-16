@@ -9,6 +9,7 @@ type Props = {
   label?: string
   onMaxPress?: () => void
   maxLoading?: boolean
+  testID?: string
 }
 
 function AmountInput({
@@ -18,13 +19,15 @@ function AmountInput({
   placeholder = "0.0",
   label,
   onMaxPress,
-  maxLoading
+  maxLoading,
+  testID
 }: Props): JSX.Element {
   return (
     <View style={styles.field}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={styles.inputRow}>
         <TextInput
+          testID={testID}
           style={styles.input}
           value={value}
           onChangeText={onChange}

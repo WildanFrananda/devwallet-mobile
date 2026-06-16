@@ -46,9 +46,9 @@ function SendScreen(): JSX.Element {
     state.status === "success" && cfg.explorerUrl ? `${cfg.explorerUrl}/tx/${state.data.hash}` : null
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="send-screen">
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Send</Text>
+        <Text style={styles.title} testID="send.title">Send</Text>
         <Text style={styles.subtitle}>{cfg.name}</Text>
 
         {chain === Chain.STARKNET_SEPOLIA && (
@@ -66,6 +66,7 @@ function SendScreen(): JSX.Element {
         <View style={styles.field}>
           <Text style={styles.label}>Recipient address</Text>
           <TextInput
+            testID="send.recipient"
             style={[styles.input, recipientError && styles.inputError]}
             value={recipient}
             onChangeText={vm.setRecipient.bind(vm)}
@@ -77,6 +78,7 @@ function SendScreen(): JSX.Element {
         </View>
 
         <AmountInput
+          testID="send.amount"
           label="Amount"
           symbol={cfg.symbol}
           value={amount}
@@ -114,15 +116,15 @@ function SendScreen(): JSX.Element {
           </View>
         )}
 
-        {state.status === "error" && <Text style={styles.error}>{state.message}</Text>}
+        {state.status === "error" && <Text style={styles.error} testID="send.error">{state.message}</Text>}
 
         {state.status === "success" && (
-          <View style={styles.successBox}>
-            <Text style={styles.successTitle}>
+          <View style={styles.successBox} testID="send.success">
+            <Text style={styles.successTitle} testID="send.status">
               {state.data.receipt ? `Confirmed (block #${state.data.receipt.blockNumber})` : "Broadcast — pending"}
             </Text>
             <Text style={styles.body}>Hash</Text>
-            <Text style={styles.mono}>{state.data.hash}</Text>
+            <Text style={styles.mono} testID="send.tx-hash">{state.data.hash}</Text>
             {explorerUrl !== null && (
               <Pressable style={styles.explorerBtn} onPress={() => void Linking.openURL(explorerUrl)}>
                 <Text style={styles.explorerBtnText}>Open in explorer ↗</Text>
@@ -131,7 +133,7 @@ function SendScreen(): JSX.Element {
           </View>
         )}
 
-        <Button title="Sign + send" onPress={() => vm.submit()} disabled={!canSubmit} />
+        <Button testID="send.submit" title="Sign + send" onPress={() => vm.submit()} disabled={!canSubmit} />
       </ScrollView>
     </SafeAreaView>
   )

@@ -60,7 +60,10 @@ function DashboardScreen(): JSX.Element {
   const selectorLabel = chainFilter === "all" ? "All networks" : NetworkRegistry.get(chainFilter).name
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID="dashboard-screen"
+    >
       <View style={styles.headerBar}>
         <Text style={styles.title}>Portfolio</Text>
         <Pressable style={styles.networkBtn} onPress={() => setSelectorOpen(true)}>
@@ -93,6 +96,7 @@ function DashboardScreen(): JSX.Element {
             return (
               <BalanceCard
                 key={e.account.chain}
+                testID={`balance-card.${e.account.chain.replace(/:/g, "-")}`}
                 entry={e}
                 loading={false}
                 tokens={tokenMap[e.account.chain]}

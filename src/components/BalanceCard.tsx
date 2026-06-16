@@ -11,9 +11,10 @@ type Props = {
   loading?: boolean
   tokens?: ReadonlyArray<Token>
   onPress?: () => void
+  testID?: string
 }
 
-function BalanceCard({ entry, loading = false, tokens, onPress }: Props): JSX.Element {
+function BalanceCard({ entry, loading = false, tokens, onPress, testID }: Props): JSX.Element {
   const cfg = NetworkRegistry.get(entry.account.chain)
 
   const body = (
@@ -40,13 +41,17 @@ function BalanceCard({ entry, loading = false, tokens, onPress }: Props): JSX.El
 
   if (onPress) {
     return (
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={onPress}>
+      <Pressable
+        testID={testID}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        onPress={onPress}
+      >
         {body}
       </Pressable>
     )
   }
 
-  return <View style={styles.card}>{body}</View>
+  return <View style={styles.card} testID={testID}>{body}</View>
 }
 
 const styles = StyleSheet.create({

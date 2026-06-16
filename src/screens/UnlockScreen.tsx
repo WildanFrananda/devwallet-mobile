@@ -35,7 +35,10 @@ function UnlockScreen({ onUnlocked }: Props): JSX.Element {
   }
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID="unlock-screen"
+    >
       <View style={styles.container}>
         <Text style={styles.title}>DevWallet</Text>
         <Text style={styles.subtitle}>Wallet is locked.</Text>
@@ -45,12 +48,13 @@ function UnlockScreen({ onUnlocked }: Props): JSX.Element {
         {state.status === "error" && <Text style={styles.error}>{state.message}</Text>}
 
         <Button
+          testID="unlock.biometric"
           title={state.status === "loading" ? "Unlocking..." : "Unlock with biometric"}
           onPress={() => vm.unlock()}
           disabled={state.status === "loading"}
         />
 
-        {hasPin && <Button title="Use PIN instead" onPress={() => setMode("pin")} />}
+        {hasPin && <Button testID="unlock.use-pin" title="Use PIN instead" onPress={() => setMode("pin")} />}
       </View>
     </View>
   )

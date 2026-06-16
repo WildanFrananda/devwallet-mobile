@@ -1,18 +1,118 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *"
+
 jobs:
-  lint-test:
+  lint-typecheck:
+    name: Lint + Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.x
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Seed .env from example
         run: cp .env.example .env
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run typecheck
-      - run: bun run test -- --ci --coverage=false
+
+  unit:
+    name: Unit + Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+      - name: Seed .env from example
+        run: cp .env.example .env
+      - run: bun install --frozen-lockfile
+      - run: bun run test -- --ci --coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: mobile-unit
+          name: mobile-unit-coverage
+          fail_ci_if_error: false
+
+  # Detox E2E runs only on PRs to main + the nightly cron (not every push) to
+  # conserve runner minutes. Both use the RELEASE Detox configs, which embed the
+  # JS bundle — no Metro needed in CI. `.env.e2e` (E2E_MOCK=1) swaps the
+  # Faucet/Webhook repos for the in-memory mocks (see e2e/README.md).
+  e2e-android:
+    name: E2E Android (Detox)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'schedule'
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Seed env (real .env + mocked .env.e2e)
+        run: |
+          cp .env.example .env
+          cp .env.example .env.e2e
+          printf '\nE2E_MOCK=1\n' >> .env.e2e
+      - run: bun install --frozen-lockfile
+      - name: AVD cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/avd/*
+          key: avd-api34-pixel6
+      - name: Build + run Detox on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          avd-name: Pixel_6a
+          script: |
+            bun run detox build --configuration android.emu.release
+            bun run detox test --configuration android.emu.release \
+              e2e/onboard.spec.ts e2e/faucet.spec.ts e2e/webhook.spec.ts e2e/rpc-inspector.spec.ts \
+              --headless --cleanup
+
+  e2e-ios:
+    name: E2E iOS (Detox)
+    runs-on: macos-14
+    if: github.event_name == 'pull_request' || github.event_name == 'schedule'
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+      - name: Seed env (real .env + mocked .env.e2e)
+        run: |
+          cp .env.example .env
+          cp .env.example .env.e2e
+          printf '\nE2E_MOCK=1\n' >> .env.e2e
+      - run: bun install --frozen-lockfile
+      - name: Install applesimutils
+        run: |
+          brew tap wix/brew
+          brew install applesimutils
+      - name: CocoaPods
+        run: cd ios && pod install
+      # NOTE: `.detoxrc.js` targets "iPhone 17 Pro Max"; adjust the simulator
+      # name to one present on the macos-14 image if the build can't find it.
+      - name: Build + run Detox on simulator
+        run: |
+          bun run detox build --configuration ios.sim.release
+          bun run detox test --configuration ios.sim.release \
+            e2e/onboard.spec.ts e2e/faucet.spec.ts e2e/webhook.spec.ts e2e/rpc-inspector.spec.ts \
+            --cleanup

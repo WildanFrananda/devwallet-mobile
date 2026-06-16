@@ -31,7 +31,10 @@ import ReplayExecutorDatasource from "../../datasources/replay/replay-executor.d
 import ReplayRepositoryImpl from "../../repositories/replay.repository.impl"
 import WebhookDatasource from "../../datasources/webhook/webhook.datasource"
 import WebhookRepositoryImpl from "../../repositories/webhook.repository.impl"
+import MockFaucetRepository from "../../repositories/mock-faucet.repository"
+import MockWebhookRepository from "../../repositories/mock-webhook.repository"
 import NftDatasource from "../../datasources/nft/nft.datasource"
+import Config from "react-native-config"
 import { Tokens } from "./tokens"
 
 class DIContainer {
@@ -56,7 +59,6 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.WalletRepository, WalletRepositoryImpl)
       getContainer.registerSingleton(Tokens.AutoLock, AutoLockService)
       getContainer.registerSingleton(Tokens.FaucetDatasource, FaucetDatasource)
-      getContainer.registerSingleton(Tokens.FaucetRepository, FaucetRepositoryImpl)
       getContainer.registerSingleton(Tokens.FeeDatasource, FeeDatasource)
       getContainer.registerSingleton(Tokens.RpcLogRepository, RpcLogRepositoryImpl)
       getContainer.registerSingleton(Tokens.ContractRepository, ContractRepositoryImpl)
@@ -69,8 +71,20 @@ class DIContainer {
       getContainer.registerSingleton(Tokens.ReplayExecutorDatasource, ReplayExecutorDatasource)
       getContainer.registerSingleton(Tokens.ReplayRepository, ReplayRepositoryImpl)
       getContainer.registerSingleton(Tokens.WebhookDatasource, WebhookDatasource)
-      getContainer.registerSingleton(Tokens.WebhookRepository, WebhookRepositoryImpl)
       getContainer.registerSingleton(Tokens.NftDatasource, NftDatasource)
+
+      // E2E mock swap (Detox). `.env.e2e` sets E2E_MOCK=1; the Faucet + Webhook
+      // repos are replaced with canned in-memory datasources so those flows run
+      // without a backend / WebSocket. Normal builds (no E2E_MOCK) use the real
+      // implementations. Everything else stays identical between the two.
+      const e2eMock = Config.E2E_MOCK === "1"
+      if (e2eMock) {
+        getContainer.registerSingleton(Tokens.FaucetRepository, MockFaucetRepository)
+        getContainer.registerSingleton(Tokens.WebhookRepository, MockWebhookRepository)
+      } else {
+        getContainer.registerSingleton(Tokens.FaucetRepository, FaucetRepositoryImpl)
+        getContainer.registerSingleton(Tokens.WebhookRepository, WebhookRepositoryImpl)
+      }
     })
     // Resolve the log repo once so the transport sink has a live target
     // before any RPC call fires. Subsequent resolutions hit the same

@@ -25,9 +25,12 @@ function WebhookCreateScreen(): JSX.Element {
   const state = useStream(vm.state$, vm.state$.value)
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID="webhook-create-screen"
+    >
       <View style={styles.headerBar}>
-        <Pressable onPress={() => nav.goBack()}>
+        <Pressable testID="webhook-create.back" onPress={() => nav.goBack()}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>New webhook</Text>
@@ -40,6 +43,7 @@ function WebhookCreateScreen(): JSX.Element {
           {vm.supportedChains.map(c => (
             <Pressable
               key={c}
+              testID={`webhook-create.chain.${c}`}
               style={[styles.chip, chain === c && styles.chipActive]}
               onPress={() => vm.setChain(c)}
             >
@@ -50,6 +54,7 @@ function WebhookCreateScreen(): JSX.Element {
 
         <Text style={styles.label}>Contract address</Text>
         <TextInput
+          testID="webhook-create.contract"
           style={styles.input}
           placeholder="0x…"
           autoCapitalize="none"
@@ -91,6 +96,7 @@ function WebhookCreateScreen(): JSX.Element {
 
         <Text style={styles.label}>Event signature</Text>
         <TextInput
+          testID="webhook-create.event-signature"
           style={styles.input}
           placeholder="Transfer(address,address,uint256)"
           autoCapitalize="none"
@@ -107,6 +113,7 @@ function WebhookCreateScreen(): JSX.Element {
         )}
 
         <Pressable
+          testID="webhook-create.submit"
           style={[styles.primaryBtn, state.status === "loading" && styles.primaryBtnDisabled]}
           onPress={() => vm.submit()}
           disabled={state.status === "loading"}
@@ -115,13 +122,14 @@ function WebhookCreateScreen(): JSX.Element {
         </Pressable>
 
         {state.status === "success" && (
-          <View style={styles.success}>
+          <View style={styles.success} testID="webhook-create.success">
             <Text style={styles.successTitle}>Created · subscribed</Text>
             <Text style={styles.successBody}>
               Event {state.data.eventName()} on {state.data.chain}. Push notifications + WS
               events will arrive when the contract emits.
             </Text>
             <Pressable
+              testID="webhook-create.back-to-list"
               style={styles.linkBtn}
               onPress={() => {
                 vm.reset()

@@ -23,7 +23,7 @@ function GenerateWalletScreen(): JSX.Element {
   })
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="welcome-screen">
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Generate wallet</Text>
         <Text style={styles.subtitle}>
@@ -32,8 +32,12 @@ function GenerateWalletScreen(): JSX.Element {
 
         {mnemonicState.status === "idle" && (
           <View style={styles.actions}>
-            <Button title="Generate 12-word phrase" onPress={() => vm.generate(128)} />
-            <Button title="Restore from existing phrase" onPress={() => nav.navigate("RestoreWallet")} />
+            <Button testID="welcome.create-wallet" title="Generate 12-word phrase" onPress={() => vm.generate(128)} />
+            <Button
+              testID="welcome.restore-wallet"
+              title="Restore from existing phrase"
+              onPress={() => nav.navigate("RestoreWallet")}
+            />
           </View>
         )}
 
@@ -43,10 +47,12 @@ function GenerateWalletScreen(): JSX.Element {
 
         {mnemonicState.status === "success" && (
           <>
-            <MnemonicGrid words={mnemonicState.data} />
+            <View testID="mnemonic-display" style={styles.mnemonicWrap}>
+              <MnemonicGrid words={mnemonicState.data} />
+            </View>
             <View style={styles.actions}>
               <Button title="Regenerate" onPress={() => vm.generate(128)} />
-              <Button title="I've written it down" onPress={() => vm.prepareVerify()} />
+              <Button testID="mnemonic.continue" title="I've written it down" onPress={() => vm.prepareVerify()} />
             </View>
           </>
         )}
@@ -61,6 +67,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "600" },
   subtitle: { fontSize: 14, opacity: 0.7 },
   actions: { gap: 8 },
+  mnemonicWrap: { width: "100%" },
   error: { color: "#B00020", fontSize: 13 }
 })
 

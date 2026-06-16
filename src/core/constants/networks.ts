@@ -1,3 +1,4 @@
+import Config from "react-native-config"
 import { Chain } from "./chains.enum"
 
 type NetworkConfig = {
@@ -10,6 +11,20 @@ type NetworkConfig = {
   faucetUrl: string | null
 }
 
+/**
+ * EVM RPC URL resolution, in priority order:
+ *   1. Alchemy (`<subdomain>.g.alchemy.com/v2/<key>`) when an ALCHEMY key is set
+ *      — generous free tier, reliable for sends + gas estimation.
+ *   2. A public fallback endpoint.
+ * The free public endpoints (1rpc.io etc.) aggressively rate-limit, which breaks
+ * broadcasts ("usage limit for your current plan"). Prefer Alchemy when keyed.
+ */
+function evmRpcUrl(alchemyKey: string | undefined, alchemySubdomain: string, publicFallback: string): string {
+  const key = alchemyKey?.trim()
+  if (key && key.length > 0) return `https://${alchemySubdomain}.g.alchemy.com/v2/${key}`
+  return publicFallback
+}
+
 class NetworkRegistry {
   private static readonly registry: Record<Chain, NetworkConfig> = {
     [Chain.EVM_SEPOLIA]: {
@@ -17,8 +32,13 @@ class NetworkRegistry {
       name: "Sepolia",
       symbol: "ETH",
       decimals: 18,
-      // publicnode 403s some User-Agents — 1rpc.io is the more permissive fallback.
-      rpcUrl: "https://1rpc.io/sepolia",
+      // Alchemy when keyed (reliable for sends); else publicnode public RPC.
+      // 1rpc.io was dropped — its free tier rate-limits broadcasts.
+      rpcUrl: evmRpcUrl(
+        Config.ALCHEMY_API_KEY_SEPOLIA,
+        "eth-sepolia",
+        "https://ethereum-sepolia-rpc.publicnode.com"
+      ),
       explorerUrl: "https://sepolia.etherscan.io",
       faucetUrl: null
     },
@@ -27,7 +47,11 @@ class NetworkRegistry {
       name: "Polygon Amoy",
       symbol: "MATIC",
       decimals: 18,
-      rpcUrl: "https://rpc-amoy.polygon.technology",
+      rpcUrl: evmRpcUrl(
+        Config.ALCHEMY_API_KEY_AMOY,
+        "polygon-amoy",
+        "https://rpc-amoy.polygon.technology"
+      ),
       explorerUrl: "https://amoy.polygonscan.com",
       faucetUrl: null
     },
@@ -36,7 +60,11 @@ class NetworkRegistry {
       name: "Base Sepolia",
       symbol: "ETH",
       decimals: 18,
-      rpcUrl: "https://sepolia.base.org",
+      rpcUrl: evmRpcUrl(
+        Config.ALCHEMY_API_KEY_BASE,
+        "base-sepolia",
+        "https://sepolia.base.org"
+      ),
       explorerUrl: "https://sepolia.basescan.org",
       faucetUrl: null
     },

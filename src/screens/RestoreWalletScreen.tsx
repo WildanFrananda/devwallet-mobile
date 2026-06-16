@@ -28,12 +28,13 @@ function RestoreWalletScreen(): JSX.Element {
   const canSubmit = valid && persist.status !== "loading"
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="restore-screen">
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Restore wallet</Text>
         <Text style={styles.subtitle}>Paste or type your 12- or 24-word recovery phrase, separated by spaces.</Text>
 
         <TextInput
+          testID="restore.mnemonic-input"
           style={styles.input}
           value={phrase}
           onChangeText={vm.setRestoreInput.bind(vm)}
@@ -62,7 +63,12 @@ function RestoreWalletScreen(): JSX.Element {
           </View>
         )}
 
-        <Button title="Restore wallet" onPress={() => vm.submitRestore()} disabled={!canSubmit} />
+        <Button
+          testID="restore.continue"
+          title="Restore wallet"
+          onPress={() => vm.submitRestore()}
+          disabled={!canSubmit}
+        />
       </ScrollView>
     </SafeAreaView>
   )

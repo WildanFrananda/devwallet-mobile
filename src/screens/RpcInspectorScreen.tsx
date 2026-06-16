@@ -72,7 +72,10 @@ function RpcInspectorScreen(): JSX.Element {
   }
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID="rpc-inspector-screen"
+    >
       <View style={styles.headerBar}>
         <View>
           <Text style={styles.title}>RPC Inspector</Text>
@@ -134,9 +137,10 @@ function RpcInspectorScreen(): JSX.Element {
         data={logs}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <LogRow
             log={item}
+            index={index}
             expanded={expandedId === item.id}
             mockMethods={mocks.map(m => m.method)}
             onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
@@ -179,6 +183,7 @@ function RpcInspectorScreen(): JSX.Element {
 
 function LogRow({
   log,
+  index,
   expanded,
   mockMethods,
   onToggle,
@@ -186,6 +191,7 @@ function LogRow({
   onReplay
 }: {
   log: RpcLog
+  index: number
   expanded: boolean
   mockMethods: ReadonlyArray<string>
   onToggle: () => void
@@ -202,6 +208,7 @@ function LogRow({
   const hasMockForMethod = mockMethods.includes(log.method)
   return (
     <Pressable
+      testID={`rpc-inspector.log-row.${index}`}
       style={[styles.row, log.status === "error" && styles.rowError, log.mocked && styles.rowMocked]}
       onPress={onToggle}
       onLongPress={onLongPress}
@@ -220,7 +227,7 @@ function LogRow({
         {chainLabel} · {log.timestamp.toLocaleTimeString()}
       </Text>
       {expanded && (
-        <View style={styles.detail}>
+        <View style={styles.detail} testID="rpc-log-detail.json">
           <Text style={styles.detailLabel}>Endpoint</Text>
           <Text style={styles.detailValue}>{log.endpoint}</Text>
           <Text style={styles.detailLabel}>Params</Text>
@@ -237,7 +244,7 @@ function LogRow({
             </>
           )}
           <View style={styles.detailActions}>
-            <Pressable style={styles.detailBtn} onPress={onReplay}>
+            <Pressable testID="rpc-log-detail.replay" style={styles.detailBtn} onPress={onReplay}>
               <Text style={styles.detailBtnText}>↻ Replay</Text>
             </Pressable>
             <Pressable style={styles.detailBtn} onPress={onLongPress}>
@@ -378,6 +385,7 @@ function ReplayOutcomeBanner({
   const isSuccess = outcome.outcome.kind === "success"
   return (
     <Pressable
+      testID="rpc-log-detail.replay-result"
       style={[styles.replayBanner, isSuccess ? styles.replayBannerOk : styles.replayBannerErr]}
       onPress={onDismiss}
     >

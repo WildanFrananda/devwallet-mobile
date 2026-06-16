@@ -51,7 +51,6 @@ describe("NftDatasource", () => {
         )
       )
     )
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     globalThis.fetch = fakeFetch as unknown as typeof globalThis.fetch
 
     const ds = new NftDatasource()
@@ -92,7 +91,6 @@ describe("NftDatasource", () => {
         )
       )
     )
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     globalThis.fetch = fakeFetch as unknown as typeof globalThis.fetch
 
     const ds = new NftDatasource()
@@ -112,7 +110,6 @@ describe("NftDatasource", () => {
     const fakeFetch = jest.fn(() =>
       Promise.resolve(new Response(JSON.stringify({ ownedNfts: [] }), { status: 200 }))
     )
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     globalThis.fetch = fakeFetch as unknown as typeof globalThis.fetch
 
     const ds = new NftDatasource()

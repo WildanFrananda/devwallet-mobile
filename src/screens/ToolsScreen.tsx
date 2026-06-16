@@ -11,38 +11,45 @@ type ToolEntry = {
   label: string
   description: string
   to: keyof AppStackParamList
+  testID: string
 }
 
 const TOOLS: ReadonlyArray<ToolEntry> = [
   {
     label: "RPC Inspector",
     description: "Live log of every chain RPC call. Filter, replay, mock.",
-    to: "RpcInspector"
+    to: "RpcInspector",
+    testID: "tools.rpc-inspector"
   },
   {
     label: "Contract Terminal",
     description: "Paste EVM / Anchor / Cairo ABI. Auto-form read & write.",
-    to: "ContractTerminal"
+    to: "ContractTerminal",
+    testID: "tools.contract-terminal"
   },
   {
     label: "Gas Oracle",
     description: "3-tier fee estimate + 24h history + custom limit.",
-    to: "GasOracle"
+    to: "GasOracle",
+    testID: "tools.gas-oracle"
   },
   {
     label: "TX Replay",
     description: "Decode mainnet tx → re-broadcast on testnet.",
-    to: "TxReplay"
+    to: "TxReplay",
+    testID: "tools.tx-replay"
   },
   {
     label: "Webhooks",
     description: "Subscribe to contract events → push notifications.",
-    to: "WebhookList"
+    to: "WebhookList",
+    testID: "tools.webhooks"
   },
   {
     label: "NFT Gallery",
     description: "Browse testnet NFTs across EVM + Solana.",
-    to: "NftGallery"
+    to: "NftGallery",
+    testID: "tools.nft-gallery"
   }
 ]
 
@@ -58,6 +65,7 @@ function ToolsScreen(): JSX.Element {
         {TOOLS.map(tool => (
           <Pressable
             key={tool.to}
+            testID={tool.testID}
             style={styles.row}
             onPress={() => nav.navigate(tool.to as never)}
           >

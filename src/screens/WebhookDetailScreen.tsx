@@ -14,7 +14,7 @@ import { useNavigation, useRoute, type RouteProp } from "@react-navigation/nativ
 import { useViewModel, useStream, useInit } from "react-native-mobile-mvvm"
 import WebhookDetailViewModel from "../viewmodels/WebhookDetailViewModel"
 import type { AppStackParamList } from "../navigation/AppNavigator"
-import type WebhookLog from "../models/webhook-log.model"
+import WebhookLogItem from "../components/WebhookLogItem"
 
 function WebhookDetailScreen(): JSX.Element {
   const vm = useViewModel(WebhookDetailViewModel)
@@ -40,7 +40,10 @@ function WebhookDetailScreen(): JSX.Element {
   const list = logs.status === "success" ? logs.data : []
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      testID="webhook-detail-screen"
+    >
       <View style={styles.headerBar}>
         <Pressable onPress={() => nav.goBack()}>
           <Text style={styles.back}>‹ Back</Text>
@@ -79,10 +82,10 @@ function WebhookDetailScreen(): JSX.Element {
         )}
         {logs.status === "error" && <Text style={styles.errorText}>{logs.message}</Text>}
         {logs.status === "success" && list.length === 0 && (
-          <Text style={styles.empty}>No events fired yet.</Text>
+          <Text style={styles.empty} testID="webhook-detail.empty">No events fired yet.</Text>
         )}
-        {list.map(l => (
-          <LogRow key={l.id} log={l} />
+        {list.map((l, index) => (
+          <WebhookLogItem key={l.id} testID={`webhook-detail.log-row.${index}`} log={l} />
         ))}
       </ScrollView>
     </View>
@@ -96,23 +99,6 @@ function MetaRow({ label, value, mono }: { label: string; value: string; mono?: 
       <Text style={[styles.metaValue, mono === true && styles.mono]} selectable>
         {value}
       </Text>
-    </View>
-  )
-}
-
-function LogRow({ log }: { log: WebhookLog }): JSX.Element {
-  return (
-    <View style={styles.logRow}>
-      <View style={styles.logHeader}>
-        <Text style={styles.logBlock}>block {log.blockNumber ?? "?"}</Text>
-        <Text style={styles.logTime}>{log.firedAt.toLocaleTimeString()}</Text>
-      </View>
-      {log.txHash && (
-        <Text style={styles.logHash} selectable>
-          {log.txHash}
-        </Text>
-      )}
-      <Text style={styles.logArgs}>{JSON.stringify(log.decodedArgs ?? {}, null, 2)}</Text>
     </View>
   )
 }
@@ -144,13 +130,7 @@ const styles = StyleSheet.create({
   },
   center: { padding: 24, alignItems: "center" },
   empty: { textAlign: "center", opacity: 0.55, marginTop: 24 },
-  errorText: { color: "#B00020", padding: 8 },
-  logRow: { backgroundColor: "#F8F8FA", borderRadius: 10, padding: 10, gap: 4 },
-  logHeader: { flexDirection: "row", justifyContent: "space-between" },
-  logBlock: { fontSize: 12, fontWeight: "700" },
-  logTime: { fontSize: 11, opacity: 0.55 },
-  logHash: { fontSize: 11, fontFamily: "Courier", opacity: 0.7 },
-  logArgs: { fontSize: 11, fontFamily: "Courier" }
+  errorText: { color: "#B00020", padding: 8 }
 })
 
 export default WebhookDetailScreen

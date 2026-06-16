@@ -50,9 +50,20 @@ function VerifyMnemonicScreen(): JSX.Element {
               autoCorrect={false}
               onChangeText={text => vm.setVerifyAnswer(slot, text)}
               placeholder="enter word"
+              testID={`verify-mnemonic.input.${slot}`}
             />
           </View>
         ))}
+        {__DEV__ && (
+          <Button
+            testID="verify-mnemonic.dev-skip"
+            title="(dev) auto-fill + verify"
+            onPress={() => {
+              challenge.expected.forEach((word, slot) => vm.setVerifyAnswer(slot, word))
+              vm.submitVerify()
+            }}
+          />
+        )}
 
         {persist.status === "loading" && <ActivityIndicator />}
 
