@@ -10,6 +10,7 @@ import SecondaryButton from "../components/SecondaryButton"
 import StepProgress from "../components/StepProgress"
 import Section from "../components/Section"
 import DotGridBackground from "../components/DotGridBackground"
+import { IS_E2E } from "../core/constants/e2e"
 import { colors, typography, spacing, radius, hairline } from "../theme"
 
 type OnboardingNav = NativeStackNavigationProp<{
@@ -122,7 +123,7 @@ function VerifyMnemonicScreen(): JSX.Element {
             onPress={() => vm.submitVerify()}
             loading={persist.status === "loading"}
           />
-          {__DEV__ && (
+          {(__DEV__ || IS_E2E) && (
             <SecondaryButton
               testID="verify-mnemonic.dev-skip"
               label="(dev) auto-fill + verify"

@@ -8,6 +8,7 @@ import FaucetChainCard from "../components/FaucetChainCard"
 import DotGridBackground from "../components/DotGridBackground"
 import { Chain } from "../core/constants/chains.enum"
 import { NetworkRegistry } from "../core/constants/networks"
+import { IS_E2E } from "../core/constants/e2e"
 import { colors, typography, spacing, radius, hairline } from "../theme"
 
 /** Droplet glyph — testnet funds, one tap. */
@@ -29,6 +30,9 @@ function DropletIcon({ color }: { color: string }): JSX.Element {
 function useNow(intervalMs: number): number {
   const [now, setNow] = useState<number>(() => Date.now())
   useEffect(() => {
+    // Skip the 1s tick under E2E — a sub-1.5s interval keeps Detox perpetually
+    // busy. Countdowns are static then, which the mock happy-path never hits.
+    if (IS_E2E) return
     const id = setInterval(() => setNow(Date.now()), intervalMs)
     return () => clearInterval(id)
   }, [intervalMs])

@@ -5,6 +5,7 @@ import { colors, typography, spacing, radius, hairline, chainColors, easing as m
 import PrimaryButton from "../components/PrimaryButton"
 import SecondaryButton from "../components/SecondaryButton"
 import DotGridBackground from "../components/DotGridBackground"
+import { IS_E2E } from "../core/constants/e2e"
 
 type Props = {
   onCreate: () => void
@@ -69,17 +70,20 @@ function WelcomeScreen({ onCreate, onRestore }: Props): JSX.Element {
       fade(actions, 40)
     ]).start()
 
-    // blinking terminal cursor after the headline
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cursor, { toValue: 0, duration: 0, delay: 530, useNativeDriver: true }),
-        Animated.timing(cursor, { toValue: 1, duration: 0, delay: 530, useNativeDriver: true })
-      ])
-    ).start()
+    // blinking terminal cursor after the headline — skipped under E2E, where its
+    // perpetual 530ms timer would keep Detox from ever idling.
+    if (!IS_E2E) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(cursor, { toValue: 0, duration: 0, delay: 530, useNativeDriver: true }),
+          Animated.timing(cursor, { toValue: 1, duration: 0, delay: 530, useNativeDriver: true })
+        ])
+      ).start()
+    }
   }, [eyebrow, headline, netCaption, chips, actions, cursor])
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="welcome-cold-open">
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="welcome-screen">
       <DotGridBackground />
       {/* Zone 1 — top-left: status banner + wordmark */}
       <Animated.View style={[styles.topZone, { opacity: eyebrow }]}>
@@ -116,8 +120,8 @@ function WelcomeScreen({ onCreate, onRestore }: Props): JSX.Element {
       {/* Zone 3 — docked bottom: hairline horizon + single fill + outline + footer */}
       <Animated.View style={[styles.bottomZone, { opacity: actions }]}>
         <View style={styles.horizon} />
-        <PrimaryButton testID="welcome.create" label="Create wallet" onPress={onCreate} />
-        <SecondaryButton testID="welcome.restore" label="I already have a phrase" onPress={onRestore} />
+        <PrimaryButton testID="welcome.create-wallet" label="Create wallet" onPress={onCreate} />
+        <SecondaryButton testID="welcome.restore-wallet" label="I already have a phrase" onPress={onRestore} />
         <Text style={styles.footer}>NON-CUSTODIAL · NO ACCOUNT · NO TRACKING</Text>
       </Animated.View>
     </SafeAreaView>

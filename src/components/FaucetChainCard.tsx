@@ -4,6 +4,7 @@ import Svg, { Defs, LinearGradient, Stop, Circle } from "react-native-svg"
 import type { ChainRow } from "../viewmodels/FaucetViewModel"
 import type { NetworkConfig } from "../core/constants/networks"
 import { truncateAddress } from "../utils/format"
+import { IS_E2E } from "../core/constants/e2e"
 import {
   colors,
   typography,
@@ -22,11 +23,8 @@ type Props = {
   cfg: NetworkConfig
   address: string | undefined
   row: ChainRow | undefined
-  /** Re-render tick (ms) so rate-limit countdowns update live. */
   now: number
-  /** Stable per-chain slug for testIDs (faucet.row.<slug>.*). */
   slug: string
-  /** Row position — drives the entrance stagger. */
   index?: number
   onRequest: () => void
 }
@@ -57,7 +55,6 @@ function formatCountdown(ms: number): string {
   return `${s}s`
 }
 
-/** Glossy token coin — chain-hue gradient sphere with the ticker on top. */
 function CoinAvatar({ hue, ticker, slug }: { hue: string; ticker: string; slug: string }): JSX.Element {
   const gid = `coin-${slug}`
   return (
@@ -89,7 +86,6 @@ function FaucetChainCard({ cfg, address, row, now, slug, index = 0, onRequest }:
   const inFlight = status === "pending" || status === "processing"
   const isSent = status === "completed"
 
-  // Entrance fade + lift; CTA press spring; in-flight status pulse; success pop.
   const enter = useRef(new Animated.Value(0)).current
   const scale = useRef(new Animated.Value(1)).current
   const pulse = useRef(new Animated.Value(1)).current
@@ -106,7 +102,7 @@ function FaucetChainCard({ cfg, address, row, now, slug, index = 0, onRequest }:
   }, [enter, index])
 
   useEffect(() => {
-    if (!inFlight) {
+    if (!inFlight || IS_E2E) {
       pulse.setValue(1)
       return
     }
@@ -130,6 +126,11 @@ function FaucetChainCard({ cfg, address, row, now, slug, index = 0, onRequest }:
 
   const actionLabel = isSent ? "Request again" : status === "failed" ? "Retry" : "Request"
   const actionFilled = status === "idle"
+
+  const statusDotStyle = {
+    backgroundColor: statusColor,
+    opacity: inFlight ? pulse : 1
+  }
 
   return (
     <Animated.View
@@ -158,7 +159,7 @@ function FaucetChainCard({ cfg, address, row, now, slug, index = 0, onRequest }:
           style={[styles.statusPill, { backgroundColor: statusColor + "1a", borderColor: statusColor + "55" }]}
           testID={`faucet.row.${slug}.status-${status}`}
         >
-          <Animated.View style={[styles.statusDot, { backgroundColor: statusColor, opacity: inFlight ? pulse : 1 }]} />
+          <Animated.View style={[styles.statusDot, statusDotStyle]} />
           <Text style={[styles.statusText, { color: statusColor }]}>{STATUS_LABEL[status] ?? status}</Text>
         </View>
       </View>

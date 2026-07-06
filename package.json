@@ -47,7 +47,7 @@
     "react-native-get-random-values": "^2.0.0",
     "react-native-keychain": "^10.0.0",
     "react-native-mmkv": "^4.3.1",
-    "react-native-mobile-mvvm": "^0.8.7",
+    "react-native-mobile-mvvm": "^0.8.8",
     "react-native-nitro-modules": "^0.35.7",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-quick-base64": "^3.0.0",

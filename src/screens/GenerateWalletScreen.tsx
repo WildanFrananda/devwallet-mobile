@@ -40,7 +40,7 @@ function GenerateWalletScreen(): JSX.Element {
   const wordCount = mnemonicState.status === "success" ? mnemonicState.data.length : 12
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="welcome-screen">
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]} testID="generate-wallet-screen">
       <DotGridBackground />
       <ScrollView contentContainerStyle={styles.container}>
         <StepProgress step={1} total={3} label="RECOVERY PHRASE" />
